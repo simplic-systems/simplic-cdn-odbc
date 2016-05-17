@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+#include <string>
 
 extern const char* ODBC_DRIVER_NAME;
 
@@ -25,10 +26,10 @@ public:
 	/// Deletes the singleton instance. Needs to be done before unloading the DLL.
 	static void deleteSingletonInstance();
 
-
-
 	/// Returns the HINSTANCE of this dll
 	inline HINSTANCE getHInstance() { return m_hInstance; }
+
+	std::string getDriverPath();
 
 
 };

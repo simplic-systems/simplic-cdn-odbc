@@ -71,7 +71,7 @@ bool ConfigDSNDialog::showDialog(HINSTANCE hInstance, HWND hwndParent, const DSN
 		MAKEINTRESOURCE(IDD_DIALOG_CONFIGDSN),
 		hwndParent,
 		&DlgMain,
-		NULL);
+		(LPARAM)dsnCurrent);
 
 	// store the DSN we got from the dialog (if any)
 	if (dialogResult != NULL)

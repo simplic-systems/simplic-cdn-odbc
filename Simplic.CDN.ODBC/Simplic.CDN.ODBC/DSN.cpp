@@ -165,7 +165,7 @@ bool DSN::fromConnectionString(std::string connstr)
 bool DSN::fromNullDelimitedAttributes(const char* attributes)
 {
 	std::string name, url, user, password;
-	bool nameValid = false, urlValid = false, userValid = false, passwordValid = false;
+	bool nameValid = false;
 
 	if (attributes == NULL) return false;
 
@@ -191,26 +191,20 @@ bool DSN::fromNullDelimitedAttributes(const char* attributes)
 		}
 		if (key.compare("url") == 0)
 		{
-			if (urlValid) return false; // abort if there are multiple urls in the connection string
 			url = value;
-			urlValid = true;
 		}
 		else if (key.compare("uid") == 0)
 		{
-			if (userValid) return false; // abort if there are multiple urls in the connection string
 			user = value;
-			userValid = true;
 		}
 		else if (key.compare("pwd") == 0)
 		{
-			if (passwordValid) return false; // abort if there are multiple urls in the connection string
 			password = value;
-			passwordValid = true;
 		}
 
 	}
 
-	if (nameValid && urlValid && userValid && passwordValid)
+	if (nameValid)
 	{
 		// Valid connection string with userid and password
 		// => store all four values
@@ -219,21 +213,6 @@ bool DSN::fromNullDelimitedAttributes(const char* attributes)
 		m_user = user;
 		m_password = password;
 		return true;
-	}
-	else if (nameValid && urlValid && !userValid && !passwordValid)
-	{
-		// Valid connection string without userid and password
-		// => just store the name and the url
-		m_name = name;
-		m_url = url;
-		m_user = "";
-		m_password = "";
-		return true;
-	}
-	else
-	{
-		// Invalid connection string => Keep the old values and return false
-		return false;
 	}
 }
 

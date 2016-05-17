@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "global_info.h"
 
-const char* ODBC_DRIVER_NAME = "Simplic.CDN.ODBC Driver";
+const char* ODBC_DRIVER_NAME = "Simplic.CDN.ODBC ANSI";
 
 GlobalInfo* GlobalInfo::_singletonInstance = NULL;
 
@@ -25,4 +25,11 @@ void GlobalInfo::createSingletonInstance(HINSTANCE hInstance)
 void GlobalInfo::deleteSingletonInstance()
 {
 	if (_singletonInstance != NULL) delete _singletonInstance;
+}
+
+std::string GlobalInfo::getDriverPath()
+{
+	char buf[MAX_PATH] = {0};
+	GetModuleFileNameA(m_hInstance, buf, MAX_PATH);
+	return std::string(buf);
 }

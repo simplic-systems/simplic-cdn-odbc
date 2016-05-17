@@ -18,19 +18,11 @@ ODBCSETUP ConfigDriver(
     switch(fRequest)
     {
     case ODBC_INSTALL_DRIVER:
-        // FIXME DEBUG
-
-
-		MessageBoxA(hwndParent,
-			"ConfigDriver: Installing Driver",
-			"Debug Message", MB_OK);
+        // TODO
         return TRUE;
 
     case ODBC_REMOVE_DRIVER:
-        // FIXME DEBUG
-		MessageBoxA(hwndParent,
-			"ConfigDriver: Removing Driver",
-			"Debug Message", MB_OK);
+        // TODO
         return TRUE;
 
     default:
@@ -45,48 +37,85 @@ ODBCSETUP ConfigDSN(
      LPCSTR   lpszDriver,
      LPCSTR   lpszAttributes)
 {
-    // lpszAttributes contains the parameters of our connection string, delimited by null characters.
-	//
-	DSN dsnPredefined;
+	DSN dsnPredefined, dsnNew;
+	// lpszAttributes contains the parameters of our connection string, delimited by null characters.
 	bool validPredefinedDSN = dsnPredefined.fromNullDelimitedAttributes(lpszAttributes);
+	dsnNew = dsnPredefined;
 
-	//FIXME: This function should not display any dialog boxes if hwndParent is null!
-	ConfigDSNDialog dialog;
-	if (dialog.showDialog(GlobalInfo::getInstance()->getHInstance(), hwndParent, validPredefinedDSN ? (&dsnPredefined) : NULL))
+	// Note: If hwndParent == NULL, we are supposed not to display any kind of dialog boxes.
+	
+
+	if ((fRequest == ODBC_CONFIG_DSN || fRequest == ODBC_REMOVE_DSN) && !validPredefinedDSN)
 	{
-		DSN dsnNew = dialog.getDSN();
+		if (hwndParent)
+			MessageBoxA(hwndParent, "Ungültiges DSN-Format", "Simplic.CDN.ODBC", MB_ICONERROR);
+		return FALSE;
+	}
 
-		// Determine if we are editing an existing DSN or if we are creating a new one.
-		bool editingExistingDSN = validPredefinedDSN && dsnPredefined.equalName(dsnNew);
+	if (fRequest == ODBC_REMOVE_DSN) // remove?
+	{
+		SQLRemoveDSNFromIni(dsnPredefined.getName().c_str());
+		return TRUE;
+	}
+
+
+	// if we are editing an existing DSN, load its attributes from the registry
+	// if not, use the values defined in dsnPredefined. (if these are not specified, they default to the empty string).
+	if (fRequest == ODBC_CONFIG_DSN)
+	{
+		char buf[65536];
+		const char* filename = "ODBC.INI";
+		//SQLWritePrivateProfileString(dsnNew.getName().c_str(), "Driver", GlobalInfo::getInstance()->getDriverPath().c_str(), filename);
+		SQLGetPrivateProfileString(dsnPredefined.getName().c_str(), "url", dsnPredefined.getUrl().c_str(), buf, 65536, filename);
+		dsnPredefined.setUrl(buf);
+		SQLGetPrivateProfileString(dsnPredefined.getName().c_str(), "uid", dsnPredefined.getUser().c_str(), buf, 65536, filename);
+		dsnPredefined.setUser(buf);
+		SQLGetPrivateProfileString(dsnPredefined.getName().c_str(), "pwd", dsnPredefined.getPassword().c_str(), buf, 65536, filename);
+		dsnPredefined.setPassword(buf);
+	}
+
+	if (hwndParent)
+	{
+		// Allow the user to change stuff if we are in GUI mode
+		ConfigDSNDialog dialog;
+		bool accepted = dialog.showDialog(GlobalInfo::getInstance()->getHInstance(), hwndParent, &dsnPredefined);
+		if (!accepted) return TRUE; // abort if the user cancelled the dialog
+
+		dsnNew = dialog.getDSN();
+	}
+	
+	
+	// Create a new DSN if we are creating a new one from scratch or changing the name of an existing one
+	if (fRequest == ODBC_ADD_DSN || !dsnPredefined.equalName(dsnNew))
+	{
 		if (!SQLWriteDSNToIni(dsnNew.getName().c_str(), ODBC_DRIVER_NAME))
 		{
-			MessageBoxA(hwndParent, "DSN konnte nicht erstellt werden.", "Simplic.CDN.ODBC", MB_ICONERROR);
-			MessageBoxA(hwndParent, dsnNew.getName().c_str() , "Simplic.CDN.ODBC", MB_ICONERROR); // FIXME DEBUG
+			if(hwndParent) MessageBoxA(hwndParent, "DSN konnte nicht erstellt werden.", "Simplic.CDN.ODBC", MB_ICONERROR);
+			if(hwndParent) MessageBoxA(hwndParent, dsnNew.getName().c_str(), "Simplic.CDN.ODBC", MB_ICONERROR); // FIXME DEBUG
 			return FALSE;
-		}
-
-		// Write attributes
-		// TODO need to write the path to the dll into the "driver" key so that the driver manager
-		// can find the dll for deleting and configuring existing DSNs.
-		BOOL success = TRUE;
-		const char* filename = "ODBC.INI";
-		success = success && SQLWritePrivateProfileString(dsnNew.getName().c_str(), "url", dsnNew.getUrl().c_str(), filename);
-		success = success && SQLWritePrivateProfileString(dsnNew.getName().c_str(), "uid", dsnNew.getUser().c_str(), filename);
-		success = success && SQLWritePrivateProfileString(dsnNew.getName().c_str(), "pwd", dsnNew.getPassword().c_str(), filename);
-		if (!success)
-		{
-			MessageBoxA(hwndParent, "Fehler beim Speichern der DSN-Attribute", "Simplic.CDN.ODBC", MB_ICONERROR);
-			// Delete the faulty DSN if we just created it from scratch
-			if(!editingExistingDSN) SQLRemoveDSNFromIni(dsnNew.getName().c_str());
-			return FALSE;
-		}
-
-		// Delete old DSN from registry if we changed the name of an existing DSN.
-		if (validPredefinedDSN && !editingExistingDSN)
-		{
-			SQLRemoveDSNFromIni(dsnPredefined.getName().c_str());
 		}
 	}
+
+	// Write attributes to the registry
+	BOOL success = TRUE;
+	const char* filename = "ODBC.INI";
+	success = success && SQLWritePrivateProfileString(dsnNew.getName().c_str(), "url"   , dsnNew.getUrl().c_str(), filename);
+	success = success && SQLWritePrivateProfileString(dsnNew.getName().c_str(), "uid"   , dsnNew.getUser().c_str(), filename);
+	success = success && SQLWritePrivateProfileString(dsnNew.getName().c_str(), "pwd"   , dsnNew.getPassword().c_str(), filename);
+	if (!success)
+	{
+		if (hwndParent) MessageBoxA(hwndParent, "Fehler beim Speichern der DSN-Attribute", "Simplic.CDN.ODBC", MB_ICONERROR);
+		// Delete the faulty DSN if we just created it from scratch
+		if(fRequest == ODBC_ADD_DSN || !dsnPredefined.equalName(dsnNew)) SQLRemoveDSNFromIni(dsnNew.getName().c_str());
+		return FALSE;
+	}
+
+	// Delete old DSN from registry if we changed the name of an existing DSN.
+	if (fRequest == ODBC_CONFIG_DSN && !dsnPredefined.equalName(dsnNew))
+	{
+		SQLRemoveDSNFromIni(dsnPredefined.getName().c_str());
+	}
+	
 
     return TRUE;
 }
