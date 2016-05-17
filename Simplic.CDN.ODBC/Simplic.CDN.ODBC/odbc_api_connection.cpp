@@ -1,5 +1,7 @@
 #include "stdafx.h"
+#include "util.h"
 #include "odbc_api.h"
+#include "global_info.h"
 
 SQLAPI SQLConnect(
         SQLHDBC        ConnectionHandle,
@@ -10,8 +12,9 @@ SQLAPI SQLConnect(
         SQLCHAR *      Authentication,
         SQLSMALLINT    NameLength3)
 {
-    //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+	SQLAPI_DEBUG;
+	//FIXME: IMPLEMENT
+    return SQL_ERROR;
 }
 
 
@@ -29,8 +32,9 @@ SQLAPI SQLDriverConnect(
         SQLSMALLINT *   StringLength2Ptr,
         SQLUSMALLINT    DriverCompletion)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -41,8 +45,9 @@ SQLAPI SQLDriverConnect(
 SQLAPI SQLDisconnect(
         SQLHDBC     ConnectionHandle)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -57,8 +62,9 @@ SQLAPI SQLGetConnectAttr(
         SQLINTEGER     BufferLength,
         SQLINTEGER *   StringLengthPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -72,8 +78,9 @@ SQLAPI SQLSetConnectAttr(
         SQLPOINTER    ValuePtr,
         SQLINTEGER    StringLength)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -86,8 +93,9 @@ SQLAPI SQLGetFunctions(
         SQLUSMALLINT      FunctionId,
         SQLUSMALLINT *    SupportedPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -100,8 +108,14 @@ SQLAPI SQLGetInfo(
         SQLSMALLINT     BufferLength,
         SQLSMALLINT *   StringLengthPtr)
 {
-    //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+	SQLAPI_DEBUG;
+	return GlobalInfo::getInstance()->getInfo()->getInfo(
+		ConnectionHandle,
+		InfoType,
+		InfoValuePtr,
+		BufferLength,
+		StringLengthPtr
+	);
 }
 
 
@@ -117,8 +131,9 @@ SQLAPI SQLNativeSql(
         SQLINTEGER     BufferLength,
         SQLINTEGER *   TextLength2Ptr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -131,8 +146,9 @@ SQLAPI SQLEndTran(
         SQLHANDLE     Handle,
         SQLSMALLINT   CompletionType)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 

@@ -1,12 +1,14 @@
 #include "stdafx.h"
+#include "util.h"
 #include "odbc_api.h"
 
 SQLAPI SQLCopyDesc(
         SQLHDESC     SourceDescHandle,
         SQLHDESC     TargetDescHandle)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -22,8 +24,9 @@ SQLAPI SQLGetDescField(
         SQLINTEGER      BufferLength,
         SQLINTEGER *    StringLengthPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -38,8 +41,9 @@ SQLAPI SQLSetDescField(
         SQLPOINTER    ValuePtr,
         SQLINTEGER    BufferLength)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -60,8 +64,9 @@ SQLAPI SQLGetDescRec(
         SQLSMALLINT *   ScalePtr,
         SQLSMALLINT *   NullablePtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -81,8 +86,9 @@ SQLAPI SQLSetDescRec(
         SQLLEN *      StringLengthPtr,
         SQLLEN *      IndicatorPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 

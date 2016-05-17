@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "util.h"
 #include "global_info.h"
 #include "odbc_api.h"
 #include "ui_ConfigDSNDialog.h"
@@ -15,6 +16,7 @@ ODBCSETUP ConfigDriver(
       WORD    cbMsgMax,
       WORD *  pcbMsgOut)
 {
+	SQLAPI_DEBUG
     switch(fRequest)
     {
     case ODBC_INSTALL_DRIVER:
@@ -37,6 +39,7 @@ ODBCSETUP ConfigDSN(
      LPCSTR   lpszDriver,
      LPCSTR   lpszAttributes)
 {
+	SQLAPI_DEBUG
 	DSN dsnPredefined, dsnNew;
 	// lpszAttributes contains the parameters of our connection string, delimited by null characters.
 	bool validPredefinedDSN = dsnPredefined.fromNullDelimitedAttributes(lpszAttributes);
@@ -126,6 +129,7 @@ ODBCSETUP ConfigTranslator(
      HWND     hwndParent,
      DWORD *  pvOption)
 {
+	SQLAPI_DEBUG
 	// FIXME DEBUG
 	
     *pvOption = 0;

@@ -1,19 +1,28 @@
 #pragma once
 #include "stdafx.h"
+#include "Info.h"
 #include <string>
+#include <mutex>
 
 extern const char* ODBC_DRIVER_NAME;
+
+class Environment;
 
 class GlobalInfo
 {
 private:
 
 	static GlobalInfo* _singletonInstance;
-	CRITICAL_SECTION m_csGlobal;
+	std::recursive_mutex m_mutex;
 
 	HINSTANCE m_hInstance; // dll handle needed for dialog boxes
+	Info m_info; // information retrievable by SQLGetInfo
+	bool m_info_initialized; // true if m_info is populated with data.
+
 	GlobalInfo(HINSTANCE hInstance);
 	~GlobalInfo();
+
+	void initializeInfo();
 
 
 public:
@@ -27,9 +36,12 @@ public:
 	static void deleteSingletonInstance();
 
 	/// Returns the HINSTANCE of this dll
-	inline HINSTANCE getHInstance() { return m_hInstance; }
+	inline HINSTANCE getHInstance() const { return m_hInstance; }
 
-	std::string getDriverPath();
+	/// Returns the path of this dll
+	std::string getDriverPath() const;
+
+	Info* getInfo();
 
 
 };

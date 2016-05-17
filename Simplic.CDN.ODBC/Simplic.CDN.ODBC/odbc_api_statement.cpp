@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "util.h"
 #include "odbc_api.h"
 
 /* ******************************
@@ -13,8 +14,9 @@ SQLAPI SQLBindCol(
       SQLLEN         BufferLength,
       SQLLEN *       StrLen_or_Ind)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -34,8 +36,9 @@ SQLAPI SQLBindParameter(
         SQLLEN          BufferLength,
         SQLLEN *        StrLen_or_IndPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -44,8 +47,9 @@ SQLAPI SQLNumParams(
         SQLHSTMT        StatementHandle,
         SQLSMALLINT *   ParameterCountPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -54,8 +58,9 @@ SQLAPI SQLParamData(
         SQLHSTMT       StatementHandle,
         SQLPOINTER *   ValuePtrPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -66,8 +71,9 @@ SQLAPI  SQLPutData(
         SQLPOINTER   DataPtr,
         SQLLEN       StrLen_or_Ind)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -82,8 +88,9 @@ SQLAPI  SQLPutData(
 SQLAPI  SQLCloseCursor(
      SQLHSTMT     StatementHandle)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -95,8 +102,9 @@ SQLAPI SQLGetCursorName(
      SQLSMALLINT     BufferLength,
      SQLSMALLINT *   NameLengthPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -107,8 +115,9 @@ SQLAPI SQLSetCursorName(
      SQLCHAR *     CursorName,
      SQLSMALLINT   NameLength)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -128,8 +137,9 @@ SQLAPI SQLColAttribute (
         SQLSMALLINT *   StringLengthPtr,
         SQLLEN *        NumericAttributePtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -147,8 +157,9 @@ SQLAPI SQLDescribeCol(
         SQLSMALLINT *  DecimalDigitsPtr,
         SQLSMALLINT *  NullablePtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -159,8 +170,9 @@ SQLAPI SQLSpecialColumns(SQLHSTMT StatementHandle,
            _In_reads_opt_(NameLength3) SQLCHAR *TableName, SQLSMALLINT NameLength3,
            SQLUSMALLINT Scope, SQLUSMALLINT Nullable)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -178,8 +190,9 @@ SQLAPI SQLSpecialColumns(
         SQLSMALLINT   Scope,
         SQLSMALLINT   Nullable)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 */
@@ -194,8 +207,9 @@ SQLAPI SQLNumResultCols(
         SQLHSTMT        StatementHandle,
         SQLSMALLINT *   ColumnCountPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -205,8 +219,9 @@ SQLAPI SQLRowCount(
         SQLHSTMT   StatementHandle,
         SQLLEN *   RowCountPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -228,8 +243,9 @@ SQLAPI SQLColumns(
         SQLCHAR *      ColumnName,
         SQLSMALLINT    NameLength4)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -240,8 +256,9 @@ SQLAPI SQLGetTypeInfo(
         SQLHSTMT      StatementHandle,
         SQLSMALLINT   DataType)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -259,8 +276,9 @@ SQLAPI SQLStatistics(
         SQLUSMALLINT    Unique,
         SQLUSMALLINT    Reserved)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -278,8 +296,9 @@ SQLAPI SQLTables(
         SQLCHAR *      TableType,
         SQLSMALLINT    NameLength4)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -294,8 +313,9 @@ SQLAPI SQLTables(
 SQLAPI SQLExecute(
         SQLHSTMT     StatementHandle)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -307,8 +327,9 @@ SQLAPI SQLExecDirect(
         SQLCHAR *    StatementText,
         SQLINTEGER   TextLength)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -320,8 +341,9 @@ SQLAPI SQLPrepare(
         SQLCHAR *     StatementText,
         SQLINTEGER    TextLength)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -331,8 +353,9 @@ SQLAPI SQLPrepare(
 SQLAPI SQLCancel(
         SQLHSTMT     StatementHandle)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -347,8 +370,9 @@ SQLAPI SQLCancel(
 SQLAPI SQLFetch(
         SQLHSTMT     StatementHandle)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -360,8 +384,9 @@ SQLAPI SQLFetchScroll(
         SQLSMALLINT   FetchOrientation,
         SQLLEN        FetchOffset)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -376,8 +401,9 @@ SQLAPI SQLGetData(
         SQLLEN         BufferLength,
         SQLLEN *       StrLen_or_IndPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -398,8 +424,9 @@ SQLAPI SQLGetStmtAttr(
         SQLINTEGER      BufferLength,
         SQLINTEGER *    StringLengthPtr)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
@@ -412,8 +439,9 @@ SQLAPI SQLSetStmtAttr(
         SQLPOINTER    ValuePtr,
         SQLINTEGER    StringLength)
 {
+	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_ERROR;
 }
 
 
