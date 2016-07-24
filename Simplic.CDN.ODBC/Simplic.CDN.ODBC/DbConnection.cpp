@@ -4,8 +4,8 @@
 
 
 DbConnection::DbConnection(Environment * env)
+	: m_timeout(10)
 {
-
 	m_environment = env;
 }
 
@@ -29,4 +29,15 @@ void DbConnection::removeStatement(Statement * stmt)
 {
 	LOCK(m_mutex);
 	m_statements.erase(stmt);
+}
+
+void DbConnection::setTimeout(uint32_t timeout)
+{
+	m_timeout = timeout;
+}
+
+bool DbConnection::connect(std::string url, std::string user, std::string password)
+{
+	// dummy
+	if (user == std::string("exampleuser")) return true; else return false;
 }

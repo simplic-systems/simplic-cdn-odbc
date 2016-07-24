@@ -1,10 +1,11 @@
 #include "stdafx.h"
 #include "util.h"
 #include "odbc_api.h"
+#include "sqlext.h"
 #include "global_info.h"
 #include "DSN.h"
-
 #include "DbConnection.h"
+
 
 SQLAPI SQLConnect(
         SQLHDBC        ConnectionHandle,
@@ -36,17 +37,30 @@ SQLAPI SQLDriverConnect(
         SQLUSMALLINT    DriverCompletion)
 {
 	SQLAPI_DEBUG;
+	
+	// create DSN from connection string
 	DSN dsn;
-	std::string connstr((char*) InConnectionString, StringLength1);
+	std::string connstr;
+	if (StringLength1 >= 0)
+	{
+		connstr = std::string((char*)InConnectionString, StringLength1);
+	}
+	else
+	{
+		// StringLength1 negative => assume that InConnectionString is null-terminated
+		connstr = std::string((char*)InConnectionString);
+	}
+
 	if (!dsn.fromConnectionString(connstr)) return SQL_ERROR;
+
 	dsn.loadAttributesFromRegistry();
 	if (WindowHandle) dsn.showConfigDialog(WindowHandle);
 
+	// connect to the url/user/pw from that DSN
 	DbConnection* dbc = (DbConnection*)ConnectionHandle;
+	bool connected = dbc->connect(dsn.getUrl(), dsn.getUser(), dsn.getPassword());
 
-	//TODO: Implement
-
-    return SQL_ERROR;
+    return connected ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -90,10 +104,15 @@ SQLAPI SQLSetConnectAttr(
         SQLPOINTER    ValuePtr,
         SQLINTEGER    StringLength)
 {
-	SQLAPI_DEBUG
-	//FIXME: IMPLEMENT
-	//return SQL_ERROR;
-	return SQL_SUCCESS;
+	SQLAPI_DEBUG;
+
+	DbConnection* dbc = (DbConnection*) ConnectionHandle;
+	switch (Attribute)
+	{
+	case SQL_LOGIN_TIMEOUT: dbc->setTimeout(uint32_t(ValuePtr)); return SQL_SUCCESS;
+
+	default: return SQL_ERROR;
+	}
 }
 
 
@@ -122,13 +141,14 @@ SQLAPI SQLGetInfo(
         SQLSMALLINT *   StringLengthPtr)
 {
 	SQLAPI_DEBUG;
-	return GlobalInfo::getInstance()->getInfo()->getInfo(
+	bool success = GlobalInfo::getInstance()->getInfo()->getInfo(
 		ConnectionHandle,
 		InfoType,
 		InfoValuePtr,
 		BufferLength,
 		StringLengthPtr
 	);
+	return success ? SQL_SUCCESS : SQL_ERROR;
 }
 
 

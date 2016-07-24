@@ -105,5 +105,5 @@ SQLAPI SQLGetDiagRec(
 {
 	SQLAPI_DEBUG
     //FIXME: IMPLEMENT
-    return SQL_SUCCESS;
+    return SQL_NO_DATA;
 }

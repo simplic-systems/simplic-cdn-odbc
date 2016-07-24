@@ -171,7 +171,7 @@ bool DSN::fromNullDelimitedAttributes(const char* attributes)
 
 	}
 
-	if (nameValid || (url.length() != 0 && user.length() != 0 & password.length() != 0))
+	if (nameValid || (url.length() != 0 && user.length() != 0 && password.length() != 0))
 	{
 		// Valid connection string with userid and password
 		// => store all four values

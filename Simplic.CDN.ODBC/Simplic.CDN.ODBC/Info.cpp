@@ -88,7 +88,7 @@ bool Info::getInfo(SQLHDBC ConnectionHandle, SQLUSMALLINT InfoType, SQLPOINTER I
 	if (it == m_records.end())
 	{
 		// No record found for this InfoType? => fail
-		*StringLengthPtr = 0;
+		if(StringLengthPtr != NULL) *StringLengthPtr = 0;
 		return false;
 	}
 	else
