@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "dsn.h"
+#include "odbc_api.h"
+#include "global_info.h"
+#include "ui_ConfigDSNDialog.h"
 
 #include <sstream>
 #include <algorithm>
@@ -88,77 +91,41 @@ bool DSN::equalName(const DSN& other) const
 
 bool DSN::fromConnectionString(std::string connstr)
 {
-	// parsed values - don't use the class members directly so that
-	// they don't get changed if the supplied connection string is invalid.
-	// The connection string should look like "url=http://127.0.0.1/api;uid=user42;pwd=password1234"
-	// TODO check if this is actually needed, if yes, merge with fromNullDelimitedAttributes in order to avoid duplicate code.
-	std::string name, url, user, password;
-	bool nameValid = false, urlValid = false, userValid = false, passwordValid = false;
+	// add trailing ';' if it does not exist
+	if (connstr[connstr.size() - 1] != ';') connstr.append(";");
 
-	std::stringstream ssConnstr(connstr);
-	std::string keyValuePair;
-	while (std::getline(ssConnstr, keyValuePair, ';')) {
-		// keyValuePair now contains a single key-value pair like "pwd=1234"
-		size_t idx = keyValuePair.find('=');
-		if (idx == std::string::npos) return false; // no '=' in a key-value pair => invalid connection string
-		std::string key = keyValuePair.substr(0, idx);
-		std::string value = keyValuePair.substr(idx+1);
+	// prevent overflow
+	if (connstr.size() > 65535) return false;
 
-		// convert key to lowercase for case-insensitive comparison
-		stringToLowercase(key);
+	char buf[65536];
+	strcpy_s(buf, connstr.c_str());
+	// replace all ';' with null characters
+	for (int i = 0; i < connstr.size(); ++i)
+		if (buf[i] == ';') buf[i] = '\0';
 
-		if (key.compare("dsn") == 0)
-		{
-			if (nameValid) return false; // abort if there are multiple names in the connection string
-			name = value;
-			nameValid = true;
-		}
-		if (key.compare("url") == 0)
-		{
-			if (urlValid) return false; // abort if there are multiple urls in the connection string
-			url = value;
-			urlValid = true;
-		}
-		else if (key.compare("uid") == 0)
-		{
-			if (userValid) return false; // abort if there are multiple urls in the connection string
-			user = value;
-			userValid = true;
-		}
-		else if (key.compare("pwd") == 0)
-		{
-			if (passwordValid) return false; // abort if there are multiple urls in the connection string
-			password = value;
-			passwordValid = true;
-		}
-		
-	}
+	// Now we can parse the string as "null delimited attribute string"
+	return fromNullDelimitedAttributes(buf);
+}
 
-	if (nameValid && urlValid && userValid && passwordValid)
-	{
-		// Valid connection string with userid and password
-		// => store all four values
-		m_name = name;
-		m_url = url;
-		m_user = user;
-		m_password = password;
-		return true;
-	}
-	else if (nameValid && urlValid && !userValid && !passwordValid)
-	{
-		// Valid connection string without userid and password
-		// => just store the name and the url
-		m_name = name;
-		m_url = url;
-		m_user = "";
-		m_password = "";
-		return true;
-	}
-	else
-	{
-		// Invalid connection string => Keep the old values and return false
-		return false;
-	}
+void DSN::loadAttributesFromRegistry()
+{
+	char buf[65536];
+	const char* filename = "ODBC.INI";
+	if (getName().size() == 0) return; // don't load from registry if this dsn does not have a name.
+	SQLGetPrivateProfileString(getName().c_str(), "url", getUrl().c_str(), buf, 65536, filename);
+	setUrl(buf);
+	SQLGetPrivateProfileString(getName().c_str(), "uid", getUser().c_str(), buf, 65536, filename);
+	setUser(buf);
+	SQLGetPrivateProfileString(getName().c_str(), "pwd", getPassword().c_str(), buf, 65536, filename);
+	setPassword(buf);
+}
+
+bool DSN::showConfigDialog(HWND hwndParent)
+{
+	ConfigDSNDialog dialog;
+	bool accepted = dialog.showDialog(GlobalInfo::getInstance()->getHInstance(), hwndParent, this);
+	if (accepted) (*this) = dialog.getDSN();
+	return accepted; // return true iff the user accepted the changes
 }
 
 
@@ -204,7 +171,7 @@ bool DSN::fromNullDelimitedAttributes(const char* attributes)
 
 	}
 
-	if (nameValid)
+	if (nameValid || (url.length() != 0 && user.length() != 0 & password.length() != 0))
 	{
 		// Valid connection string with userid and password
 		// => store all four values
@@ -214,5 +181,6 @@ bool DSN::fromNullDelimitedAttributes(const char* attributes)
 		m_password = password;
 		return true;
 	}
+	return false;
 }
 

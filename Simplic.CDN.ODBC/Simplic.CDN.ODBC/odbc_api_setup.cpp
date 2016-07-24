@@ -2,7 +2,8 @@
 #include "util.h"
 #include "global_info.h"
 #include "odbc_api.h"
-#include "ui_ConfigDSNDialog.h"
+#include "DSN.h"
+
 
 
 #define ODBCSETUP BOOL __stdcall
@@ -66,25 +67,14 @@ ODBCSETUP ConfigDSN(
 	// if not, use the values defined in dsnPredefined. (if these are not specified, they default to the empty string).
 	if (fRequest == ODBC_CONFIG_DSN)
 	{
-		char buf[65536];
-		const char* filename = "ODBC.INI";
-		//SQLWritePrivateProfileString(dsnNew.getName().c_str(), "Driver", GlobalInfo::getInstance()->getDriverPath().c_str(), filename);
-		SQLGetPrivateProfileString(dsnPredefined.getName().c_str(), "url", dsnPredefined.getUrl().c_str(), buf, 65536, filename);
-		dsnPredefined.setUrl(buf);
-		SQLGetPrivateProfileString(dsnPredefined.getName().c_str(), "uid", dsnPredefined.getUser().c_str(), buf, 65536, filename);
-		dsnPredefined.setUser(buf);
-		SQLGetPrivateProfileString(dsnPredefined.getName().c_str(), "pwd", dsnPredefined.getPassword().c_str(), buf, 65536, filename);
-		dsnPredefined.setPassword(buf);
+		dsnPredefined.loadAttributesFromRegistry();
 	}
 
 	if (hwndParent)
 	{
-		// Allow the user to change stuff if we are in GUI mode
-		ConfigDSNDialog dialog;
-		bool accepted = dialog.showDialog(GlobalInfo::getInstance()->getHInstance(), hwndParent, &dsnPredefined);
+		dsnNew = dsnPredefined;
+		bool accepted = dsnNew.showConfigDialog(hwndParent);
 		if (!accepted) return TRUE; // abort if the user cancelled the dialog
-
-		dsnNew = dialog.getDSN();
 	}
 	
 	

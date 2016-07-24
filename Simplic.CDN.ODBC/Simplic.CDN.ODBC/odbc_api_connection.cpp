@@ -2,6 +2,9 @@
 #include "util.h"
 #include "odbc_api.h"
 #include "global_info.h"
+#include "DSN.h"
+
+#include "DbConnection.h"
 
 SQLAPI SQLConnect(
         SQLHDBC        ConnectionHandle,
@@ -32,8 +35,17 @@ SQLAPI SQLDriverConnect(
         SQLSMALLINT *   StringLength2Ptr,
         SQLUSMALLINT    DriverCompletion)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
+	SQLAPI_DEBUG;
+	DSN dsn;
+	std::string connstr((char*) InConnectionString, StringLength1);
+	if (!dsn.fromConnectionString(connstr)) return SQL_ERROR;
+	dsn.loadAttributesFromRegistry();
+	if (WindowHandle) dsn.showConfigDialog(WindowHandle);
+
+	DbConnection* dbc = (DbConnection*)ConnectionHandle;
+
+	//TODO: Implement
+
     return SQL_ERROR;
 }
 
@@ -79,8 +91,9 @@ SQLAPI SQLSetConnectAttr(
         SQLINTEGER    StringLength)
 {
 	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	//FIXME: IMPLEMENT
+	//return SQL_ERROR;
+	return SQL_SUCCESS;
 }
 
 

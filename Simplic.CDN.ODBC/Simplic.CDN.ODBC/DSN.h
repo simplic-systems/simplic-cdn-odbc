@@ -54,5 +54,12 @@ public:
 	*/
 	bool fromConnectionString(std::string connstr);
 
+	void loadAttributesFromRegistry();
+
+	/**
+	* Shows a dialog that allows the user to configure this DSN's attributes.
+	* Returns true iff the user accepted the changes, returns false iff the user cancelled the dialog
+	*/
+	bool showConfigDialog(HWND hwndParent);
 };
 
