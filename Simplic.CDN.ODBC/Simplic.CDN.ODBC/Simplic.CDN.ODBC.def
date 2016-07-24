@@ -7,7 +7,6 @@ EXPORTS
         SQLDisconnect
         SQLGetConnectAttr
         SQLSetConnectAttr
-        SQLGetFunctions
         SQLGetInfo
         SQLNativeSql
         SQLEndTran

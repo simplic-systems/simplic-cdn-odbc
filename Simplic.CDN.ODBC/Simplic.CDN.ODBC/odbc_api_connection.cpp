@@ -120,19 +120,6 @@ SQLAPI SQLSetConnectAttr(
 
 
 
-SQLAPI SQLGetFunctions(
-        SQLHDBC           ConnectionHandle,
-        SQLUSMALLINT      FunctionId,
-        SQLUSMALLINT *    SupportedPtr)
-{
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
-}
-
-
-
-
 SQLAPI SQLGetInfo(
         SQLHDBC         ConnectionHandle,
         SQLUSMALLINT    InfoType,
