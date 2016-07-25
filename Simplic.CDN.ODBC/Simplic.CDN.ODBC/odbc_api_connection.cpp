@@ -56,6 +56,12 @@ SQLAPI SQLDriverConnect(
 	dsn.loadAttributesFromRegistry();
 	if (WindowHandle) dsn.showConfigDialog(WindowHandle);
 
+	// write connection string to buffer
+	if (OutConnectionString != NULL)
+	{
+		Util::stringToOdbcBuffer(dsn.toConnectionString(), OutConnectionString, BufferLength, StringLength2Ptr);
+	}
+
 	// connect to the url/user/pw from that DSN
 	DbConnection* dbc = (DbConnection*)ConnectionHandle;
 	bool connected = dbc->connect(dsn.getUrl(), dsn.getUser(), dsn.getPassword());

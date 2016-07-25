@@ -32,3 +32,15 @@ void odbc_api_called(const char* file, int line, const char* function)
 }
 
 #endif
+
+
+Util::Util() {}
+
+bool Util::stringToOdbcBuffer(std::string value, SQLPOINTER buffer, SQLSMALLINT BufferLength, SQLSMALLINT * StringLengthPtr)
+{
+	if(StringLengthPtr != NULL) *StringLengthPtr = (SQLSMALLINT)value.size();
+	SQLSMALLINT bytesToCopy = min(SQLSMALLINT(value.size()) + 1, BufferLength);
+	memcpy(buffer, value.c_str(), bytesToCopy);
+
+	return bytesToCopy <= BufferLength;
+}

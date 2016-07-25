@@ -101,7 +101,12 @@ bool DSN::fromConnectionString(std::string connstr)
 	strcpy_s(buf, connstr.c_str());
 	// replace all ';' with null characters
 	for (int i = 0; i < connstr.size(); ++i)
-		if (buf[i] == ';') buf[i] = '\0';
+	{
+		if (buf[i] == ';')
+		{
+			buf[i] = '\0';
+		}
+	}
 
 	// Now we can parse the string as "null delimited attribute string"
 	return fromNullDelimitedAttributes(buf);
@@ -139,8 +144,10 @@ bool DSN::fromNullDelimitedAttributes(const char* attributes)
 	// attributes looks like this: "DSN=Personnel Data\0URL=some_url\0UID=Smith\0PWD=Sesame\0\0"
 	// This loop iterates through all key-value pairs individually by advancing the "attributes" pointer to
 	// the beginning of the next key-value pair after each iteration.
-	for (std::string keyValuePair(attributes); attributes[0] != 0; attributes += keyValuePair.size() + 1)
+	for (std::string keyValuePair; attributes[0] != 0; attributes += keyValuePair.size() + 1)
 	{
+		keyValuePair = std::string(attributes);
+
 		// keyValuePair now contains a single key-value pair like "pwd=1234"
 		size_t idx = keyValuePair.find('=');
 		if (idx == std::string::npos) return false; // no '=' in a key-value pair => invalid connection string
