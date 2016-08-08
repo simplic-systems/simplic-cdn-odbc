@@ -11,7 +11,7 @@ SQLAPI SQLAllocHandle(
    SQLHANDLE     InputHandle,
    SQLHANDLE *   OutputHandlePtr)
 {
-	SQLAPI_DEBUG
+	SQLAPI_DEBUG;
 	// Create a new object and return a pointer to the object in OutputHandlePtr.
 	// InputHandle specifies the parent of the newly created object. 
 	// (Handles are just pointers to class objects in the context of this ODBC driver)

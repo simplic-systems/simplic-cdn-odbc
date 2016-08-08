@@ -54,6 +54,9 @@
     <ClInclude Include="Info.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Info.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

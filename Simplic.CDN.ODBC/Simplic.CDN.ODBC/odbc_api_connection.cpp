@@ -134,9 +134,7 @@ SQLAPI SQLGetInfo(
         SQLSMALLINT *   StringLengthPtr)
 {
 	SQLAPI_DEBUG;
-	bool success = GlobalInfo::getInstance()->getInfo()->getInfo(
-		ConnectionHandle,
-		InfoType,
+	bool success = GlobalInfo::getInstance()->getInfoField((DbConnection*)ConnectionHandle, InfoType)->toOdbc(
 		InfoValuePtr,
 		BufferLength,
 		StringLengthPtr

@@ -4,97 +4,110 @@
 
 #include <string>
 #include <map>
+#include <functional>
 
-class InfoRecord;
-class StringInfoRecord;
-class USmallIntInfoRecord;
-class UIntInfoRecord;
+class OdbcInfoField
+{
+public:
+	virtual ~OdbcInfoField() = default;
+
+	virtual bool fromOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength) = 0;
+
+	virtual bool toOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr) = 0;
+
+	virtual OdbcInfoField* clone() = 0;
+};
+
+template<typename T>
+class DynamicInfoField : public OdbcInfoField
+{
+protected:
+	std::function<T()> m_dynamicValue;
+public:
+	DynamicInfoField() = default;
+	DynamicInfoField(T value);
+	DynamicInfoField(std::function<T()> dynamicValue);
+
+	virtual ~DynamicInfoField<T>() = default;
+
+	virtual bool fromOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength) = 0;
+
+	virtual bool toOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr) = 0;
+
+	virtual OdbcInfoField* clone() = 0;
 
 
-/// Abstract class representing a single record
-/// retrievable by SQLGetInfo()
+	T getValue() { return m_dynamicValue(); }
+	void setValue(T value) { m_dynamicValue = [=]() {return value; }; }
+	void setValue(const std::function<T()>& value) { m_dynamicValue = value; }
+};
+
+
+template<typename T>
+class FixedSizeInfoField : public DynamicInfoField<T>
+{
+public:
+	FixedSizeInfoField() = default;
+	FixedSizeInfoField(T value);
+	FixedSizeInfoField(std::function<T()> dynamicValue);
+
+	virtual bool fromOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength);
+
+	virtual bool toOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr);
+
+	virtual OdbcInfoField* clone();
+};
+
+
+class StringInfoField : public DynamicInfoField<std::string>
+{
+public:
+	StringInfoField() = default;
+	StringInfoField(std::string value);
+	StringInfoField(std::function<std::string()> dynamicValue);
+	virtual bool fromOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength);
+
+	virtual bool toOdbc(
+		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr);
+
+	virtual OdbcInfoField* clone();
+};
+
+
+
+
+
 class InfoRecord
 {
-public:
-
-	virtual ~InfoRecord();
-
-	/// Gets the information stored in this record.
-	/// Compatible with SQLGetInfo() API
-	virtual bool getInfo(
-		SQLHDBC         ConnectionHandle,
-		SQLPOINTER      InfoValuePtr,
-		SQLSMALLINT     BufferLength,
-		SQLSMALLINT *   StringLengthPtr) const = 0;
-
-	virtual InfoRecord* clone() const = 0;
-};
-
-class StringInfoRecord : public InfoRecord
-{
 private:
-	std::string m_value;
+	std::map<int, OdbcInfoField*> m_fields;
+
 public:
-	StringInfoRecord(std::string value);
-	virtual bool  getInfo(
-		SQLHDBC         ConnectionHandle,
-		SQLPOINTER      InfoValuePtr,
-		SQLSMALLINT     BufferLength,
-		SQLSMALLINT *   StringLengthPtr) const;
-
-	virtual InfoRecord* clone() const;
-};
-
-
-class USmallIntInfoRecord : public InfoRecord
-{
-private:
-	SQLUSMALLINT m_value;
-public:
-	USmallIntInfoRecord(SQLUSMALLINT value) ;
-	virtual bool  getInfo(
-		SQLHDBC         ConnectionHandle,
-		SQLPOINTER      InfoValuePtr,
-		SQLSMALLINT     BufferLength,
-		SQLSMALLINT *   StringLengthPtr) const;
-
-	virtual InfoRecord* clone() const;
-};
-
-
-class UIntInfoRecord : public InfoRecord
-{
-private:
-	SQLUINTEGER m_value;
-public:
-	UIntInfoRecord(SQLUINTEGER value);
-	virtual bool  getInfo(
-		SQLHDBC         ConnectionHandle,
-		SQLPOINTER      InfoValuePtr,
-		SQLSMALLINT     BufferLength,
-		SQLSMALLINT *   StringLengthPtr) const;
-
-	virtual InfoRecord* clone() const;
+	InfoRecord();
+	~InfoRecord();
+	OdbcInfoField* getField(int key);
+	void addField(int key, OdbcInfoField* field);
 };
 
 
 
-
-class Info
-{
-private:
-	std::map<SQLUSMALLINT, InfoRecord*> m_records; // maps InfoTypes to their values.
-public:
-	Info();
-	~Info();
-
-	void addRecord(SQLUSMALLINT infoType, const InfoRecord& rec);
-	
-	bool  getInfo(
-		SQLHDBC         ConnectionHandle,
-		SQLUSMALLINT    InfoType,
-		SQLPOINTER      InfoValuePtr,
-		SQLSMALLINT     BufferLength,
-		SQLSMALLINT *   StringLengthPtr) const;
-};
-
+#include "Info.hpp"

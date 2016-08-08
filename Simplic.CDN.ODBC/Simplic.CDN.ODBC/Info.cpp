@@ -1,104 +1,58 @@
 #include "stdafx.h"
 #include "Info.h"
 
+StringInfoField::StringInfoField(std::string value)
+	: DynamicInfoField<std::string>(value) {}
 
-StringInfoRecord::StringInfoRecord(std::string value)
+StringInfoField::StringInfoField(std::function<std::string()> dynamicValue)
+	: DynamicInfoField<std::string>(dynamicValue) {}
+
+bool StringInfoField::fromOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength)
 {
-	m_value = value;
-	// truncate string, SQLGetInfo can't handle buffers with more than 32767 bytes
-	// (we truncate it to 32766 chars to leave space for the terminating \0)
-	if(m_value.size() > 32766) m_value.erase(32766); 
-}
-
-bool StringInfoRecord::getInfo(SQLHDBC ConnectionHandle, SQLPOINTER InfoValuePtr, SQLSMALLINT BufferLength, SQLSMALLINT * StringLengthPtr) const
-{
-	*StringLengthPtr = (SQLSMALLINT) m_value.size();
-	SQLSMALLINT bytesToCopy = min(SQLSMALLINT(m_value.size()) + 1, BufferLength);
-	memcpy(InfoValuePtr, m_value.c_str(), bytesToCopy);
-
-	return bytesToCopy <= BufferLength;
-}
-
-InfoRecord * StringInfoRecord::clone() const
-{
-	return new StringInfoRecord(m_value);
-}
-
-USmallIntInfoRecord::USmallIntInfoRecord(SQLUSMALLINT value)
-{
-	m_value = value;
-}
-
-bool USmallIntInfoRecord::getInfo(SQLHDBC ConnectionHandle, SQLPOINTER InfoValuePtr, SQLSMALLINT BufferLength, SQLSMALLINT * StringLengthPtr) const
-{
-	// we can ignore BufferLength here and assume that the buffer is large enough
-	// (this is allowed for integer values)
-	*StringLengthPtr = 2;
-	*(SQLUSMALLINT*)InfoValuePtr = m_value;
+	setValue(std::string((const char*)buffer, (size_t)bufferLength));
 	return true;
 }
 
-InfoRecord * USmallIntInfoRecord::clone() const
+bool StringInfoField::toOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength, SQLSMALLINT * dataLengthPtr)
 {
-	return new USmallIntInfoRecord(m_value);
+	std::string value = getValue();
+	*dataLengthPtr = (SQLSMALLINT)value.size();
+	SQLSMALLINT bytesToCopy = min(SQLSMALLINT(value.size()) + 1, bufferLength);
+	memcpy(buffer, value.c_str(), bytesToCopy);
+	return bytesToCopy <= bufferLength;
 }
 
-UIntInfoRecord::UIntInfoRecord(SQLUINTEGER value)
+OdbcInfoField* StringInfoField::clone()
 {
-	m_value = value;
-}
-
-bool UIntInfoRecord::getInfo(SQLHDBC ConnectionHandle, SQLPOINTER InfoValuePtr, SQLSMALLINT BufferLength, SQLSMALLINT * StringLengthPtr) const
-{
-	// we can ignore BufferLength here and assume that the buffer is large enough
-	// (this is allowed for integer values)
-	*StringLengthPtr = 4;
-	*(SQLUINTEGER*)InfoValuePtr = m_value;
-	return true;
-}
-
-InfoRecord * UIntInfoRecord::clone() const
-{
-	return new UIntInfoRecord(m_value);
+	StringInfoField *cloned = new StringInfoField();
+	cloned->setValue(m_dynamicValue);
+	return cloned;
 }
 
 
 
-Info::Info()
+InfoRecord::InfoRecord()
 {
-}
-
-Info::~Info()
-{
-	for (auto pair : m_records)
-	{
-		delete pair.second;
-	}
-	m_records.clear();
-}
-
-void Info::addRecord(SQLUSMALLINT infoType, const InfoRecord & rec)
-{
-	m_records[infoType] = rec.clone();
-}
-
-bool Info::getInfo(SQLHDBC ConnectionHandle, SQLUSMALLINT InfoType, SQLPOINTER InfoValuePtr, SQLSMALLINT BufferLength, SQLSMALLINT * StringLengthPtr) const
-{
-	auto it = m_records.find(InfoType);
-	if (it == m_records.end())
-	{
-		// No record found for this InfoType? => fail
-		if(StringLengthPtr != NULL) *StringLengthPtr = 0;
-		return false;
-	}
-	else
-	{
-		// Found a record? => let the record object take care of this
-		return it->second->getInfo(ConnectionHandle, InfoValuePtr, BufferLength, StringLengthPtr);
-	}
-	
 }
 
 InfoRecord::~InfoRecord()
 {
+	for (std::pair<int, OdbcInfoField* > pair : m_fields) delete pair.second;
+	m_fields.clear();
+}
+
+OdbcInfoField* InfoRecord::getField(int key)
+{
+	auto it = m_fields.find(key);
+	if (it == m_fields.end()) return NULL;
+	else return it->second;
+}
+
+
+void InfoRecord::addField(int key, OdbcInfoField* field)
+{
+	OdbcInfoField* prevField = getField(key);
+	if (prevField != NULL) delete prevField;
+
+	m_fields[key] = field;
 }

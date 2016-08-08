@@ -424,7 +424,14 @@ SQLAPI SQLGetStmtAttr(
         SQLINTEGER      BufferLength,
         SQLINTEGER *    StringLengthPtr)
 {
-	SQLAPI_DEBUG
+	/*
+	10010 SQL_ATTR_APP_ROW_DESC
+	10011 SQL_ATTR_APP_PARAM_DESC
+	10012 SQL_ATTR_IMP_ROW_DESC
+	10013 SQL_ATTR_IMP_PARAM_DESC
+	*/
+	SQLAPI_DEBUG;
+	if (StringLengthPtr != NULL) *StringLengthPtr = 0; 
     //FIXME: IMPLEMENT
     return SQL_ERROR;
 }

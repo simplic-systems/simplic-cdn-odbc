@@ -18,12 +18,31 @@ GlobalInfo::~GlobalInfo()
 
 void GlobalInfo::initializeInfo()
 {
-	m_info.addRecord(SQL_DRIVER_ODBC_VER, StringInfoRecord("03.00"));
+	m_info.addField(SQL_DRIVER_NAME, new StringInfoField("Simplic.CDN.ODBC.dll"));
+	m_info.addField(SQL_DRIVER_ODBC_VER, new StringInfoField("03.00"));
+
+	m_info.addField(SQL_CURSOR_COMMIT_BEHAVIOR, new FixedSizeInfoField<SQLUSMALLINT>(SQL_CB_CLOSE));
+	m_info.addField(SQL_CURSOR_ROLLBACK_BEHAVIOR, new FixedSizeInfoField<SQLUSMALLINT>(SQL_CB_CLOSE));
+	m_info.addField(SQL_GETDATA_EXTENSIONS, new FixedSizeInfoField<SQLUINTEGER>(0));
+	
+	m_info.addField(SQL_MAX_CATALOG_NAME_LEN, new FixedSizeInfoField<SQLUSMALLINT>(0));
+	m_info.addField(SQL_MAX_SCHEMA_NAME_LEN, new FixedSizeInfoField<SQLUSMALLINT>(0));
+	m_info.addField(SQL_TXN_CAPABLE, new FixedSizeInfoField<SQLUSMALLINT>(0));
+	m_info.addField(SQL_IDENTIFIER_CASE, new FixedSizeInfoField<SQLUSMALLINT>(SQL_IC_MIXED));
+	m_info.addField(SQL_SEARCH_PATTERN_ESCAPE, new StringInfoField(""));
+	m_info.addField(SQL_QUALIFIER_NAME_SEPARATOR, new StringInfoField("."));
+	m_info.addField(SQL_NON_NULLABLE_COLUMNS, new FixedSizeInfoField<SQLUSMALLINT>(SQL_NNC_NON_NULL));
+	m_info.addField(SQL_SCROLL_CONCURRENCY, new FixedSizeInfoField<SQLUINTEGER>(0));
+	m_info.addField(SQL_TXN_ISOLATION_OPTION, new FixedSizeInfoField<SQLUINTEGER>(0));
+
+	m_info.addField(SQL_DBMS_VER, new StringInfoField("00.00.0000"));
+	m_info.addField(SQL_DBMS_NAME, new StringInfoField("Simplic.CDN.ODBC"));
 }
 
 void GlobalInfo::createSingletonInstance(HINSTANCE hInstance)
 {
-	_singletonInstance = new GlobalInfo(hInstance);
+	_singletonInstance = new GlobalInfo(hInstance); 
+	_singletonInstance->initializeInfo();
 }
 
 
@@ -39,8 +58,9 @@ std::string GlobalInfo::getDriverPath() const
 	return std::string(buf);
 }
 
-Info * GlobalInfo::getInfo()
+OdbcInfoField* GlobalInfo::getInfoField(DbConnection* conn, SQLUSMALLINT type)
 {
-	if (!m_info_initialized) initializeInfo();
-	return &m_info;
+	// TODO: Support querying information from the DbConnection, 
+	// if any is provided to us
+	return m_info.getField(type);
 }

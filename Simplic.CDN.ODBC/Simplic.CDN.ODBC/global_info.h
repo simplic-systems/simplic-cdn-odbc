@@ -7,6 +7,7 @@
 extern const char* ODBC_DRIVER_NAME;
 
 class Environment;
+class DbConnection;
 
 class GlobalInfo
 {
@@ -16,7 +17,7 @@ private:
 	std::recursive_mutex m_mutex;
 
 	HINSTANCE m_hInstance; // dll handle needed for dialog boxes
-	Info m_info; // information retrievable by SQLGetInfo
+	InfoRecord m_info; // information retrievable by SQLGetInfo
 	bool m_info_initialized; // true if m_info is populated with data.
 
 	GlobalInfo(HINSTANCE hInstance);
@@ -41,7 +42,7 @@ public:
 	/// Returns the path of this dll
 	std::string getDriverPath() const;
 
-	Info* getInfo();
+	OdbcInfoField* getInfoField(DbConnection* conn, SQLUSMALLINT type);
 
 
 };

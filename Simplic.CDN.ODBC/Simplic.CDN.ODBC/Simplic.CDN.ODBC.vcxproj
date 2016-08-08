@@ -191,6 +191,9 @@
     <ClCompile Include="DSN.cpp" />
     <ClCompile Include="Environment.cpp" />
     <ClCompile Include="global_info.cpp" />
+    <ClInclude Include="Info.hpp">
+      <FileType>CppCode</FileType>
+    </ClInclude>
     <ClCompile Include="Info.cpp" />
     <ClCompile Include="odbc_api.cpp" />
     <ClCompile Include="odbc_api_connection.cpp" />
