@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "odbc_api.h"
 
+#include "Helper.h"
 #include "util.h"
 #include "Environment.h"
 #include "DbConnection.h"
@@ -84,9 +85,19 @@ SQLAPI SQLGetDiagField(
         SQLSMALLINT     BufferLength,
         SQLSMALLINT *   StringLengthPtr)
 {
-    //FIXME: IMPLEMENT
-	SQLAPI_DEBUG
-    return SQL_SUCCESS;
+	SQLAPI_DEBUG;
+	//FIXME: IMPLEMENT
+	if (DiagIdentifier == SQL_DIAG_SQLSTATE)
+	{
+		Helper::stringToOdbc("01000", (char*)DiagInfoPtr, BufferLength, (uint16_t*)StringLengthPtr);
+	}
+	else if (BufferLength <= 4)
+	{
+		*(uint16_t*)DiagInfoPtr = 0;
+		if (StringLengthPtr != NULL) *StringLengthPtr = 0;
+	}
+	else Helper::stringToOdbc("Simplic.CDN.ODBC driver: Diagnostics not implemented yet", (char*)DiagInfoPtr, BufferLength, (uint16_t*)StringLengthPtr);
+    return SQL_NO_DATA;
 }
 
 
@@ -103,7 +114,11 @@ SQLAPI SQLGetDiagRec(
         SQLSMALLINT     BufferLength,
         SQLSMALLINT *   TextLengthPtr)
 {
-	SQLAPI_DEBUG
+	SQLAPI_DEBUG;
     //FIXME: IMPLEMENT
+	if(SQLState != NULL) strcpy_s((char*) SQLState, 6, "01000"); // general warning
+	if (NativeErrorPtr != NULL) *NativeErrorPtr = 0;
+	Helper::stringToOdbc("Simplic.CDN.ODBC driver: Diagnostics not implemented yet", (char*)MessageText, BufferLength, (uint16_t*)TextLengthPtr);
+	
     return SQL_NO_DATA;
 }

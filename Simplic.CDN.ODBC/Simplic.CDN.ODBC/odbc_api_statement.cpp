@@ -2,6 +2,10 @@
 #include "util.h"
 #include "odbc_api.h"
 
+#include "Helper.h"
+#include "Statement.h"
+#include "QueryResult.h"
+
 /* ******************************
  *    RESULT SET BINDING
  * ****************************** */
@@ -148,18 +152,43 @@ SQLAPI SQLColAttribute (
 
 SQLAPI SQLDescribeCol(
         SQLHSTMT       StatementHandle,
-        SQLUSMALLINT   ColumnNumber,
-        SQLCHAR *      ColumnName,
-        SQLSMALLINT    BufferLength,
-        SQLSMALLINT *  NameLengthPtr,
-        SQLSMALLINT *  DataTypePtr,
-        SQLULEN *      ColumnSizePtr,
-        SQLSMALLINT *  DecimalDigitsPtr,
-        SQLSMALLINT *  NullablePtr)
+        SQLUSMALLINT   ColumnNumber, 
+        SQLCHAR *      ColumnName,   // ok
+        SQLSMALLINT    BufferLength, // ""
+        SQLSMALLINT *  NameLengthPtr, // ""
+        SQLSMALLINT *  DataTypePtr, // ok
+        SQLULEN *      ColumnSizePtr, // not implemented
+        SQLSMALLINT *  DecimalDigitsPtr, // not implemented
+        SQLSMALLINT *  NullablePtr) // not implemented
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+	
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	ColumnDescriptor* col = stmt->getColumnDescriptor(ColumnNumber);
+	if (col == NULL) return SQL_ERROR;
+
+	std::string name = col->getName();
+	if (ColumnName != NULL)
+	{
+		memcpy(ColumnName, name.c_str(), min(name.size() + 1, BufferLength - 1));
+
+		// add terminating zero char if we didn't manage to copy it from the name.
+		if (BufferLength <= name.size()) ColumnName[BufferLength - 1] = '\0';
+	}
+
+	if (NameLengthPtr != NULL) *NameLengthPtr = SQLUSMALLINT(min(name.size(), 0xFFFF));
+	if (DataTypePtr != NULL) *DataTypePtr = col->getType();
+
+
+	// set properties we didn't implement yet to "unknown"
+	if (ColumnSizePtr != NULL) *ColumnSizePtr = 0;
+	if (DecimalDigitsPtr != NULL) *DecimalDigitsPtr = 0;
+	if (NullablePtr != NULL) *NullablePtr = SQL_NULLABLE_UNKNOWN;
+
+		
+    return SQL_SUCCESS;
 }
 
 
@@ -287,18 +316,27 @@ SQLAPI SQLStatistics(
 
 SQLAPI SQLTables(
         SQLHSTMT       StatementHandle,
-        SQLCHAR *      CatalogName,
+        SQLCHAR *      pCatalogName,
         SQLSMALLINT    NameLength1,
-        SQLCHAR *      SchemaName,
+        SQLCHAR *      pSchemaName,
         SQLSMALLINT    NameLength2,
-        SQLCHAR *      TableName,
+        SQLCHAR *      pTableName,
         SQLSMALLINT    NameLength3,
-        SQLCHAR *      TableType,
+        SQLCHAR *      pTableType,
         SQLSMALLINT    NameLength4)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+	
+	std::string catalogName = Helper::stringFromOdbc((char*)pCatalogName, NameLength1);
+	std::string schemaName  = Helper::stringFromOdbc((char*)pSchemaName, NameLength2);
+	std::string tableName   = Helper::stringFromOdbc((char*)pTableName, NameLength3);
+	std::string tableType   = Helper::stringFromOdbc((char*)pTableType, NameLength4);
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	bool result = stmt->getTables(catalogName, schemaName, tableName, tableType);
+    return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -371,8 +409,14 @@ SQLAPI SQLFetch(
         SQLHSTMT     StatementHandle)
 {
 	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	bool result = stmt->fetchNext();
+	if (!result) return SQL_ERROR;
+	if (stmt->getNumFetchedRows() == 0) return SQL_NO_DATA;
+	return SQL_SUCCESS;
 }
 
 
@@ -385,7 +429,7 @@ SQLAPI SQLFetchScroll(
         SQLLEN        FetchOffset)
 {
 	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
+	//FIXME: IMPLEMENT
     return SQL_ERROR;
 }
 
@@ -401,9 +445,14 @@ SQLAPI SQLGetData(
         SQLLEN         BufferLength,
         SQLLEN *       StrLen_or_IndPtr)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	//TODO: Implement getting long data in parts: https://msdn.microsoft.com/de-de/library/ms712426(v=vs.85).aspx
+	//We can probably store information about the progress on a data item as a "pseudo" ARD / APD item.
+	SQLRETURN result = stmt->getData(Col_or_Param_Num, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
+	return result;
 }
 
 
@@ -431,9 +480,10 @@ SQLAPI SQLGetStmtAttr(
 	10013 SQL_ATTR_IMP_PARAM_DESC
 	*/
 	SQLAPI_DEBUG;
-	if (StringLengthPtr != NULL) *StringLengthPtr = 0; 
+	if (StringLengthPtr != NULL) *StringLengthPtr = 0;
+	*((uint64_t*)ValuePtr) = 0x123456789AAAULL;
     //FIXME: IMPLEMENT
-    return SQL_ERROR;
+    return SQL_SUCCESS;
 }
 
 

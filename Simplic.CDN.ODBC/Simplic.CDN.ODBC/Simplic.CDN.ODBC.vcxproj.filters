@@ -57,6 +57,24 @@
     <ClInclude Include="Info.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="QueryResult.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json\json.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="json\json-forwards.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ApplicationDataDescriptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OdbcTypeConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -102,6 +120,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QueryResult.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="jsoncpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ApplicationDataDescriptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OdbcTypeConverter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

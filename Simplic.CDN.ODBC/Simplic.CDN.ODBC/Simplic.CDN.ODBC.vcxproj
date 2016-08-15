@@ -159,12 +159,18 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ApplicationDataDescriptor.h" />
     <ClInclude Include="DbConnection.h" />
     <ClInclude Include="DSN.h" />
     <ClInclude Include="Environment.h" />
     <ClInclude Include="global_info.h" />
+    <ClInclude Include="Helper.h" />
     <ClInclude Include="Info.h" />
+    <ClInclude Include="json\json-forwards.h" />
+    <ClInclude Include="json\json.h" />
+    <ClInclude Include="OdbcTypeConverter.h" />
     <ClInclude Include="odbc_api.h" />
+    <ClInclude Include="QueryResult.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Statement.h" />
     <ClInclude Include="stdafx.h" />
@@ -173,6 +179,7 @@
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ApplicationDataDescriptor.cpp" />
     <ClCompile Include="DbConnection.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
@@ -194,12 +201,19 @@
     <ClInclude Include="Info.hpp">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClCompile Include="Helper.cpp" />
     <ClCompile Include="Info.cpp" />
+    <ClCompile Include="jsoncpp.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="OdbcTypeConverter.cpp" />
     <ClCompile Include="odbc_api.cpp" />
     <ClCompile Include="odbc_api_connection.cpp" />
     <ClCompile Include="odbc_api_descriptor.cpp" />
     <ClCompile Include="odbc_api_setup.cpp" />
     <ClCompile Include="odbc_api_statement.cpp" />
+    <ClCompile Include="QueryResult.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
