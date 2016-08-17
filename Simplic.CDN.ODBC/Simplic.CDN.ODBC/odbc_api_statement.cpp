@@ -183,7 +183,7 @@ SQLAPI SQLDescribeCol(
 
 
 	// set properties we didn't implement yet to "unknown"
-	if (ColumnSizePtr != NULL) *ColumnSizePtr = 0;
+	if (ColumnSizePtr != NULL) *ColumnSizePtr = col->getSize();
 	if (DecimalDigitsPtr != NULL) *DecimalDigitsPtr = 0;
 	if (NullablePtr != NULL) *NullablePtr = SQL_NULLABLE_UNKNOWN;
 
@@ -263,18 +263,26 @@ SQLAPI SQLRowCount(
 
 SQLAPI SQLColumns(
         SQLHSTMT       StatementHandle,
-        SQLCHAR *      CatalogName,
+        SQLCHAR *      pCatalogName,
         SQLSMALLINT    NameLength1,
-        SQLCHAR *      SchemaName,
+        SQLCHAR *      pSchemaName,
         SQLSMALLINT    NameLength2,
-        SQLCHAR *      TableName,
+        SQLCHAR *      pTableName,
         SQLSMALLINT    NameLength3,
-        SQLCHAR *      ColumnName,
+        SQLCHAR *      pColumnName,
         SQLSMALLINT    NameLength4)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+	std::string catalogName = Helper::stringFromOdbc((char*)pCatalogName, NameLength1);
+	std::string schemaName = Helper::stringFromOdbc((char*)pSchemaName, NameLength2);
+	std::string tableName = Helper::stringFromOdbc((char*)pTableName, NameLength3);
+	std::string columnName = Helper::stringFromOdbc((char*)pColumnName, NameLength4);
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	SQLRETURN result = stmt->getColumns(catalogName, schemaName, tableName, columnName);
+	return result;
 }
 
 

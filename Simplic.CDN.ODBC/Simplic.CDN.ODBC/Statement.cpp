@@ -59,6 +59,26 @@ bool Statement::getTables(std::string catalogName, std::string schemaName, std::
 	return m_currentResult.fromJson(*result);
 }
 
+
+SQLRETURN Statement::getColumns(std::string catalogName, std::string schemaName, std::string tableName, std::string columnName)
+{
+	m_cursorPos = 0;
+
+	Json::Value parameters, *result;
+	parameters["catalog"] = catalogName;
+	parameters["schema"] = schemaName;
+	parameters["table"] = tableName;
+	parameters["columnname"] = columnName;
+
+	result = m_connection->executeCommand("getcolumns", parameters);
+	if (result->isNull())
+	{
+		return false;
+	}
+
+	return m_currentResult.fromJson(*result);
+}
+
 bool Statement::fetchNext()
 {
 	bool result = fetch(m_cursorPos, 1);

@@ -31,6 +31,7 @@ public:
 
 	// ##### data retrieval #####
 	SQLRETURN getData(SQLUSMALLINT Col_or_Param_Num, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr);
+	SQLRETURN getColumns(std::string catalogName, std::string schemaName, std::string tableName, std::string columnName);
 
 	// ##### command execution functions #####
 

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "QueryResult.h"
+#include "OdbcTypeConverter.h"
 
 #include <sqltypes.h>
 #include <sql.h>
@@ -19,6 +20,15 @@ void ColumnDescriptor::fromJson(const Json::Value & jsonColumn)
 	/* example column: { "name" : "name" , "type" : 12 } */
 	m_name = jsonColumn["name"].asString();
 	m_type = jsonColumn["type"].asUInt();
+	Json::Value jsonSize = jsonColumn["size"];
+	if (jsonSize.isNull())
+	{
+		m_size = OdbcTypeConverter::getInstance()->getColumnSizeByType(m_type);
+	}
+	else
+	{
+		m_size = jsonSize.asUInt64();
+	}
 }
 
 

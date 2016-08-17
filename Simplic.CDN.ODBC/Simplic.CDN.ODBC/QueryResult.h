@@ -9,6 +9,7 @@ class ColumnDescriptor
 private:
 	std::string m_name;
 	uint16_t m_type;
+	uint64_t m_size;
 
 public:
 
@@ -19,6 +20,7 @@ public:
 
 	inline uint16_t getType() { return m_type; } 
 	inline std::string getName() { return m_name; }
+	inline uint64_t getSize() { return m_size; }
 
 };
 

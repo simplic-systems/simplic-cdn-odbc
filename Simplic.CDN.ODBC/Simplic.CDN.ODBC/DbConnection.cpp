@@ -78,7 +78,9 @@ Json::Value* DbConnection::executeCommand(const std::string & command, const Jso
 	// extract status information from HTTP status
 
 	// dummy response:
-	std::string responseString =
+	std::string responseString = "";
+
+	if(command == "gettables") responseString = 
 		"{"
 		"    \"meta\" : {"
 		"        \"rowcount\" : 2 ,"
@@ -92,10 +94,44 @@ Json::Value* DbConnection::executeCommand(const std::string & command, const Jso
 		"    },"
 		"    "
 		"    \"rows\" : ["
-		"        [null,null,\"firsttable\",\"TABLE\",\"dummy\"],"
-		"        [null,null,\"secondtable\",\"TABLE\",\"dummy\"]"
+		"        [\"catalog1\",\"schema1\",\"dummytable1\",\"TABLE\",\"This is just a dummy table that doesn't actually exist.\"]"
+	//	"       ,[\"catalog1\",\"schema1\",\"dummytable2\",\"TABLE\",\"This is just a dummy table that doesn't actually exist.\"]"
 		"    ]"
 		"}";
+
+	// SQLColumns() dummy result - see https://msdn.microsoft.com/de-de/library/ms711683(v=vs.85).aspx
+	else if(command == "getcolumns") responseString = 
+		"{"
+		"    \"meta\" : {"
+		"        \"columns\" : ["
+		"            { \"name\" : \"TABLE_CAT\"  , \"type\" : 12 }," // type 12 is SQL_VARCHAR
+		"            { \"name\" : \"TABLE_SCHEM\", \"type\" : 12 },"
+		"            { \"name\" : \"TABLE_NAME\" , \"type\" : 12, \"nullable\" : false },"
+		"            { \"name\" : \"COLUMN_NAME\", \"type\" : 12, \"nullable\" : false },"
+		"            { \"name\" : \"DATA_TYPE\"  , \"type\" : 5 , \"nullable\" : false }," // type 5 is SQL_SMALLINT
+		"            { \"name\" : \"TYPE_NAME\", \"type\" : 12, \"nullable\" : false },"
+		"            { \"name\" : \"COLUMN_SIZE\", \"type\" : 4 }," // type 4 is SQL_INTEGER
+		"            { \"name\" : \"BUFFER_LENGTH\", \"type\" : 4 }," 
+		"            { \"name\" : \"DECIMAL_DIGITS\", \"type\" : 5 },"
+		"            { \"name\" : \"NUM_PREC_RADIX\", \"type\" : 5 },"
+		"            { \"name\" : \"NULLABLE\", \"type\" : 5, \"nullable\" : false  },"
+		"            { \"name\" : \"REMARKS\", \"type\" : 12 },"
+		"            { \"name\" : \"COLUMN_DEF\", \"type\" : 12 },"
+		"            { \"name\" : \"SQL_DATA_TYPE\", \"type\" : 5, \"nullable\" : false },"
+		"            { \"name\" : \"SQL_DATETIME_SUB \", \"type\" : 5 },"
+		"            { \"name\" : \"CHAR_OCTET_LENGTH  \", \"type\" : 4 },"
+		"            { \"name\" : \"ORDINAL_POSITION  \", \"type\" : 4, \"nullable\" : false },"
+		"            { \"name\" : \"IS_NULLABLE\", \"type\" : 12 }"
+		"        ]"
+		"    },"
+		"    "
+		"    \"rows\" : ["   
+		//        TABLE_CAT     TABLE_SCHEM  TABLE_NAME       COLUMN_NAME  DATA_TYPE  TYPE_NAME    COLUMN_SIZE  BUFFER_LENGTH  DECIMAL_DIGITS  NUM_PREC_RADIX  NULLABLE  REMARKS  COLUMN_DEF     SQL_DATA_TYPE  SQL_DATETIME_SUB  CHAR_OCTET_LENGTH  ORDINAL_POSITION  IS_NULLABLE
+		"        [\"catalog1\", \"schema1\", \"dummytable1\", \"id\"     , 4        , \"INTEGER\", 10         , 4            , null          , null          , 0       , \"\"   , \"0\"        , 4            , null            , null             , 1               , \"NO\" ],"
+		"        [\"catalog1\", \"schema1\", \"dummytable2\", \"text\"   , 12       , \"VARCHAR\", 255        , 256          , null          , null          , 0       , \"\"   , \"'default'\", 4            , null            , 255              , 2               , \"NO\" ]"
+		"    ]"
+		"}";
+
 
 	Json::Reader reader;
 

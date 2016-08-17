@@ -21,6 +21,9 @@ private:
 	// Maps SQL types to converter functions.
 	std::map < SQLUSMALLINT, JsonToOdbcConverter> m_toOdbcConverters;
 
+	// Maps SQL types to column sizes. See https://msdn.microsoft.com/de-de/library/ms711786(v=vs.85).aspx 
+	std::map < SQLUSMALLINT, SQLLEN> m_columnSizes;
+
 	OdbcTypeConverter();
 
 public:
@@ -37,6 +40,9 @@ public:
 		SQLPOINTER TargetValuePtr,
 		SQLLEN BufferLength,
 		SQLLEN *StrLen_or_IndPt);
+
+
+	SQLLEN getColumnSizeByType(SQLSMALLINT type);
 
 };
 
