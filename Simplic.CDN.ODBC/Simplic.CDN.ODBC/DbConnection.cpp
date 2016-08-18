@@ -16,6 +16,7 @@ DbConnection::DbConnection(Environment * env)
 {
 	m_environment = env;
 	m_curl = curl_easy_init();
+	m_headers = NULL;
 }
 
 DbConnection::~DbConnection()
@@ -23,7 +24,10 @@ DbConnection::~DbConnection()
 	LOCK(m_mutex);
 	for (Statement* stmt : m_statements) delete stmt;
 	m_statements.clear();
+
 	curl_easy_cleanup(m_curl);
+	if (m_headers != NULL) curl_slist_free_all(m_headers);
+
 	m_environment->removeConnection(this);
 }
 
@@ -31,6 +35,78 @@ size_t DbConnection::receiveJson(void *contents, size_t size)
 {
 	m_recvbufJson.write((char*)contents, size);
 	return size; // if we return less than size, curl will assume that there's an error.
+}
+
+std::string DbConnection::encodeGetParameters(const Json::Value& parameters)
+{
+	std::stringstream ss;
+	char separator = '?';
+	for (Json::ValueConstIterator it = parameters.begin(); it != parameters.end(); ++it)
+	{
+		// key
+		char* escaped = curl_easy_escape(m_curl, it.key().asCString(), 0);
+		ss << separator << escaped;
+		curl_free(escaped);
+
+		// value
+		escaped = curl_easy_escape(m_curl, it->asCString(), 0);
+		ss << "=" << escaped;
+		curl_free(escaped);
+
+		separator = '&'; // use '&' to separate key-value pairs
+	}
+	return ss.str();
+}
+
+void DbConnection::curlReset()
+{
+	curl_easy_reset(m_curl);
+	if (m_headers != NULL) curl_slist_free_all(m_headers);
+	m_headers = NULL;
+}
+
+void DbConnection::curlPrepareReceiveJson()
+{
+	curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, ReceiveJson);
+	curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, (void*)this);
+}
+
+void DbConnection::curlPrepareAuth()
+{
+	m_headers = curl_slist_append(m_headers, (std::string("Authorization: jwt ") + m_authToken).c_str());
+}
+
+void DbConnection::curlPrepareGet(std::string endpoint, const Json::Value& parameters)
+{
+	std::string parameterString = encodeGetParameters(parameters);
+	curl_easy_setopt(m_curl, CURLOPT_URL, (m_url + endpoint + parameterString).c_str());
+}
+
+void DbConnection::curlPreparePost(std::string endpoint, const Json::Value& parameters)
+{
+	// Set URL
+	curl_easy_setopt(m_curl, CURLOPT_URL, (m_url + endpoint).c_str());
+
+	// Set POST Content
+	m_headers = curl_slist_append(m_headers, "Content-Type: text/json");
+
+	Json::FastWriter fastWriter;
+	m_paramString = fastWriter.write(parameters);
+	curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, m_paramString.c_str());
+}
+
+CURLcode DbConnection::curlPerformRequest()
+{
+	m_recvbufJson.str(""); // clear any old results
+	if(m_headers != NULL) curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_headers);
+	return curl_easy_perform(m_curl);
+}
+
+long DbConnection::curlGetHttpStatusCode()
+{
+	long httpresult;
+	curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &httpresult);
+	return httpresult;
 }
 
 Statement * DbConnection::createStatement()
@@ -64,27 +140,15 @@ bool DbConnection::connect(std::string url, std::string user, std::string passwo
 	parameters["userName"] = user;
 	parameters["password"] = password;
 
-	Json::FastWriter fastWriter;
-	std::string paramString = fastWriter.write(parameters);
+	// set up curl
+	curlReset();
+	curlPrepareReceiveJson();
+	curlPreparePost("auth/login", parameters);
+	CURLcode result = curlPerformRequest();
 
-	// set HTTP headers
-	struct curl_slist *chunk = NULL;
-	chunk = curl_slist_append(chunk, "Content-Type: text/json");
-	curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, chunk);
-
-	curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, ReceiveJson);
-	curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, (void*)this);
-
-	curl_easy_setopt(m_curl, CURLOPT_URL, (m_url + "auth/login").c_str());
-	curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, paramString.c_str());
-
-	m_recvbufJson.clear();
-	CURLcode result = curl_easy_perform(m_curl); // do the request and write the result into m_recvbufJson
-	long httpresult;
-	curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &httpresult);
+	long httpresult = curlGetHttpStatusCode();
 	if (result != CURLE_OK || httpresult < 200 || httpresult > 299) return false;
 
-	
 	Json::Reader reader;
 	Json::Value response;
 	if (!reader.parse(m_recvbufJson.str(), response, false)) // parse responseString into response, skipping comments
@@ -98,75 +162,24 @@ bool DbConnection::connect(std::string url, std::string user, std::string passwo
 
 Json::Value* DbConnection::executeCommand(const std::string & command, const Json::Value & parameters)
 {
-	// TODO:
-	// use command in url: m_url + "odbc/" + command
-	// use m_authToken in HTTP 'Authorization' header: "jwt " + m_authToken
-	// use json-decoded parameters as content.
+	// TODO: Clean up the curl stuff by putting it in separate methods.
+	// URL-encode parameters
+	std::string parameterString = encodeGetParameters(parameters);
 
-	// TODO:
-	// decode the result as a json object
-	// extract status information from HTTP status
-
-	// dummy response:
-	std::string responseString = "";
-
-	if(command == "gettables") responseString = 
-		"{"
-		"    \"meta\" : {"
-		"        \"rowcount\" : 1 ,"
-		"        \"columns\" : ["
-		"            { \"name\" : \"TABLE_CAT\" , \"type\" : 12 }," // type 12 is SQL_VARCHAR
-		"            { \"name\" : \"TABLE_SCHEM\" , \"type\" : 12 },"
-		"            { \"name\" : \"TABLE_NAME\" , \"type\" : 12 },"
-		"            { \"name\" : \"TABLE_TYPE\" , \"type\" : 12 },"
-		"            { \"name\" : \"TABLE_REMARKS\" , \"type\" : 12 }"
-		"        ]"
-		"    },"
-		"    "
-		"    \"rows\" : ["
-		"        [\"catalog1\",\"schema1\",\"dummytable1\",\"TABLE\",\"This is just a dummy table that doesn't actually exist.\"]"
-	//	"       ,[\"catalog1\",\"schema1\",\"dummytable2\",\"TABLE\",\"This is just a dummy table that doesn't actually exist.\"]"
-		"    ]"
-		"}";
-
-	// SQLColumns() dummy result - see https://msdn.microsoft.com/de-de/library/ms711683(v=vs.85).aspx
-	else if(command == "getcolumns") responseString = 
-		"{"
-		"    \"meta\" : {"
-		"        \"rowcount\" : 2, "
-		"        \"columns\" : ["
-		"            { \"name\" : \"TABLE_CAT\"  , \"type\" : 12 }," // type 12 is SQL_VARCHAR
-		"            { \"name\" : \"TABLE_SCHEM\", \"type\" : 12 },"
-		"            { \"name\" : \"TABLE_NAME\" , \"type\" : 12, \"nullable\" : false },"
-		"            { \"name\" : \"COLUMN_NAME\", \"type\" : 12, \"nullable\" : false },"
-		"            { \"name\" : \"DATA_TYPE\"  , \"type\" : 5 , \"nullable\" : false }," // type 5 is SQL_SMALLINT
-		"            { \"name\" : \"TYPE_NAME\", \"type\" : 12, \"nullable\" : false },"
-		"            { \"name\" : \"COLUMN_SIZE\", \"type\" : 4 }," // type 4 is SQL_INTEGER
-		"            { \"name\" : \"BUFFER_LENGTH\", \"type\" : 4 }," 
-		"            { \"name\" : \"DECIMAL_DIGITS\", \"type\" : 5 },"
-		"            { \"name\" : \"NUM_PREC_RADIX\", \"type\" : 5 },"
-		"            { \"name\" : \"NULLABLE\", \"type\" : 5, \"nullable\" : false  },"
-		"            { \"name\" : \"REMARKS\", \"type\" : 12 },"
-		"            { \"name\" : \"COLUMN_DEF\", \"type\" : 12 },"
-		"            { \"name\" : \"SQL_DATA_TYPE\", \"type\" : 5, \"nullable\" : false },"
-		"            { \"name\" : \"SQL_DATETIME_SUB \", \"type\" : 5 },"
-		"            { \"name\" : \"CHAR_OCTET_LENGTH  \", \"type\" : 4 },"
-		"            { \"name\" : \"ORDINAL_POSITION  \", \"type\" : 4, \"nullable\" : false },"
-		"            { \"name\" : \"IS_NULLABLE\", \"type\" : 12 }"
-		"        ]"
-		"    },"
-		"    "
-		"    \"rows\" : ["   
-		//        TABLE_CAT     TABLE_SCHEM  TABLE_NAME       COLUMN_NAME  DATA_TYPE  TYPE_NAME    COLUMN_SIZE  BUFFER_LENGTH  DECIMAL_DIGITS  NUM_PREC_RADIX  NULLABLE  REMARKS  COLUMN_DEF     SQL_DATA_TYPE  SQL_DATETIME_SUB  CHAR_OCTET_LENGTH  ORDINAL_POSITION  IS_NULLABLE
-		"        [\"catalog1\", \"schema1\", \"dummytable1\", \"id\"     , 4        , \"INTEGER\", 10         , 4            , null          , null          , 0       , \"\"   , \"0\"        , 4            , null            , null             , 1               , \"NO\" ],"
-		"        [\"catalog1\", \"schema1\", \"dummytable2\", \"text\"   , 12       , \"VARCHAR\", 255        , 256          , null          , null          , 0       , \"\"   , \"'default'\", 4            , null            , 255              , 2               , \"NO\" ]"
-		"    ]"
-		"}";
-
+	curlReset();
+	curlPrepareReceiveJson();
+	curlPrepareAuth();
+	curlPrepareGet(std::string("odbc/") + command, parameters);
+	CURLcode result = curlPerformRequest();
+	long httpresult = curlGetHttpStatusCode();
+	if (result != CURLE_OK || httpresult < 200 || httpresult > 299)
+	{
+		m_apiResult = Json::Value(); // clear result object if parsing failed
+		return &m_apiResult;
+	}
 
 	Json::Reader reader;
-
-	if (!reader.parse(responseString, m_apiResult, false)) // parse responseString into response, skipping comments
+	if (!reader.parse(m_recvbufJson.str(), m_apiResult, false)) // parse responseString into response, skipping comments
 	{
 		m_apiResult = Json::Value(); // clear result object if parsing failed
 	}
@@ -177,7 +190,7 @@ Json::Value* DbConnection::executeCommand(const std::string & command, const Jso
 bool DbConnection::fetch(std::vector<Json::Value*> & result, uint32_t fromRow, uint32_t numRows)
 {
 	result.clear();
-	Json::Value& rows = m_apiResult["rows"];
+	Json::Value& rows = m_apiResult["Rows"];
 	if (rows.isNull()) return false;
 
 	uint32_t rowsAvailable = rows.size();

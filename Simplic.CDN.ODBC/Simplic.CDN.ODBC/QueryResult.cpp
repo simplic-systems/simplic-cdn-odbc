@@ -17,17 +17,18 @@ ColumnDescriptor::ColumnDescriptor(const Json::Value & jsonColumn)
 
 void ColumnDescriptor::fromJson(const Json::Value & jsonColumn)
 {
-	/* example column: { "name" : "name" , "type" : 12 } */
-	m_name = jsonColumn["name"].asString();
-	m_type = jsonColumn["type"].asUInt();
-	Json::Value jsonSize = jsonColumn["size"];
+	/* example column: { "Name" : "name" , "Type" : 12 } */
+	m_name = jsonColumn["Name"].asString();
+	m_type = jsonColumn["Type"].asUInt();
+	Json::Value jsonSize = jsonColumn["Size"];
 	if (jsonSize.isNull())
 	{
-		m_size = OdbcTypeConverter::getInstance()->getColumnSizeByType(m_type);
+		m_size = 0;
 	}
-	else
+
+	if (m_size == 0) // if "Size" was 0 or not set, use the default size
 	{
-		m_size = jsonSize.asUInt64();
+		m_size = OdbcTypeConverter::getInstance()->getColumnSizeByType(m_type);
 	}
 }
 
@@ -47,14 +48,14 @@ bool QueryResult::fromJson(const Json::Value& apiResponse)
 {
 	/* example result:
 	{
-		"meta" : {
-			"rowcount" : 2
-			"columns" : [
-				{ "name" : "name" , "type" : 12 }
+		"Meta" : {
+			"RowCount" : 2
+			"Columns" : [
+				{ "Name" : "name" , "Type" : 12 }
 			]
 		},
 
-		"rows" : [
+		"Rows" : [
 			["firsttable"],
 			["secondtable"]
 		]
@@ -62,14 +63,14 @@ bool QueryResult::fromJson(const Json::Value& apiResponse)
 
 	m_columnMeta.clear();
 
-	const Json::Value& meta = apiResponse["meta"];
+	const Json::Value& meta = apiResponse["Meta"];
 	if (meta.isNull()) return false;
 
 	// parse general meta info
-	m_rowCount = meta["rowcount"].asUInt();
+	m_rowCount = meta["RowCount"].asUInt();
 
 	// parse column meta info
-	const Json::Value& columns = meta["columns"]; 
+	const Json::Value& columns = meta["Columns"]; 
 	if (columns.isNull()) return false;
 	for (auto it = columns.begin(); it != columns.end(); ++it)
 	{
