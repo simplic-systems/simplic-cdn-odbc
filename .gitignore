@@ -235,3 +235,11 @@ _Pvt_Extensions
 # FAKE - F# Make
 .fake/
 /OdbcTest
+
+!/Simplic.CDN.ODBC/dependencies
+!/Simplic.CDN.ODBC/dependencies/*
+!/Simplic.CDN.ODBC/dependencies/*/*
+!/Simplic.CDN.ODBC/dependencies/*/*/*
+!/Simplic.CDN.ODBC/dependencies/*/*/*/*
+!/Simplic.CDN.ODBC/dependencies/*/*/*/*/*
+!/Simplic.CDN.ODBC/dependencies/*/*/*/*/*/*

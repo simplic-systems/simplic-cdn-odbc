@@ -8,7 +8,7 @@
 #include <string>
 #include <mutex>
 
-
+#include <curl/curl.h>
 
 class Statement;
 

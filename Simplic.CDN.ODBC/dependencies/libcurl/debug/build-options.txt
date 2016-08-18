@@ -1,0 +1,2 @@
+Command line used for this build:
+nmake /f Makefile.vc mode=dll DEBUG=yes VC=14 MACHINE=x64

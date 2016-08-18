@@ -1,10 +1,11 @@
 #include "stdafx.h"
 #include "Environment.h"
 #include "DbConnection.h"
+#include "curl/curl.h"
 
 Environment::Environment()
 {
-
+	curl_global_init(CURL_GLOBAL_ALL);
 }
 
 Environment::~Environment()

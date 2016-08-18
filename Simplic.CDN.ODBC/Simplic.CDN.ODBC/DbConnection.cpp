@@ -83,7 +83,7 @@ Json::Value* DbConnection::executeCommand(const std::string & command, const Jso
 	if(command == "gettables") responseString = 
 		"{"
 		"    \"meta\" : {"
-		"        \"rowcount\" : 2 ,"
+		"        \"rowcount\" : 1 ,"
 		"        \"columns\" : ["
 		"            { \"name\" : \"TABLE_CAT\" , \"type\" : 12 }," // type 12 is SQL_VARCHAR
 		"            { \"name\" : \"TABLE_SCHEM\" , \"type\" : 12 },"
@@ -103,6 +103,7 @@ Json::Value* DbConnection::executeCommand(const std::string & command, const Jso
 	else if(command == "getcolumns") responseString = 
 		"{"
 		"    \"meta\" : {"
+		"        \"rowcount\" : 2, "
 		"        \"columns\" : ["
 		"            { \"name\" : \"TABLE_CAT\"  , \"type\" : 12 }," // type 12 is SQL_VARCHAR
 		"            { \"name\" : \"TABLE_SCHEM\", \"type\" : 12 },"
