@@ -4,11 +4,18 @@
 
 #include "json/json.h"
 
+/// Function called by CURL when data has been received.
+static size_t ReceiveJson(void *contents, size_t size, size_t nmemb, void *userp)
+{
+	return ((DbConnection*)userp)->receiveJson(contents, size*nmemb);
+}
+
 
 DbConnection::DbConnection(Environment * env)
 	: m_timeout(10)
 {
 	m_environment = env;
+	m_curl = curl_easy_init();
 }
 
 DbConnection::~DbConnection()
@@ -16,7 +23,14 @@ DbConnection::~DbConnection()
 	LOCK(m_mutex);
 	for (Statement* stmt : m_statements) delete stmt;
 	m_statements.clear();
+	curl_easy_cleanup(m_curl);
 	m_environment->removeConnection(this);
+}
+
+size_t DbConnection::receiveJson(void *contents, size_t size)
+{
+	m_recvbufJson.write((char*)contents, size);
+	return size; // if we return less than size, curl will assume that there's an error.
 }
 
 Statement * DbConnection::createStatement()
@@ -43,26 +57,42 @@ bool DbConnection::connect(std::string url, std::string user, std::string passwo
 	if (url.size() < 1) return false;
 	if (url[url.size() - 1] != '/') url = url + "/"; // add trailing slash to url if it's not there yet
 	url = url + "api/v1-0/";
+	m_url = url; // base URL
 
-	// TODO:
-	// HTTP POST url + "auth/login" 
-	// if(HTTP Status not OK) return false;
+	// set POST parameters
+	Json::Value parameters;
+	parameters["userName"] = user;
+	parameters["password"] = password;
 
-	// TODO: Remove this dummy!
-	if (user == std::string("invalid")) return false;
+	Json::FastWriter fastWriter;
+	std::string paramString = fastWriter.write(parameters);
 
-	// the response will look like this dummy response
-	std::string responseString = "{ \"token\": \"dummy.auth.token\" }";
+	// set HTTP headers
+	struct curl_slist *chunk = NULL;
+	chunk = curl_slist_append(chunk, "Content-Type: text/json");
+	curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, chunk);
+
+	curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, ReceiveJson);
+	curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, (void*)this);
+
+	curl_easy_setopt(m_curl, CURLOPT_URL, (m_url + "auth/login").c_str());
+	curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, paramString.c_str());
+
+	m_recvbufJson.clear();
+	CURLcode result = curl_easy_perform(m_curl); // do the request and write the result into m_recvbufJson
+	long httpresult;
+	curl_easy_getinfo(m_curl, CURLINFO_RESPONSE_CODE, &httpresult);
+	if (result != CURLE_OK || httpresult < 200 || httpresult > 299) return false;
+
+	
 	Json::Reader reader;
 	Json::Value response;
-	if (!reader.parse(responseString, response, false)) // parse responseString into response, skipping comments
+	if (!reader.parse(m_recvbufJson.str(), response, false)) // parse responseString into response, skipping comments
 	{
 		return false;
 	}
 
-	
-	m_url = url;
-	m_authToken = "DummyAuthToken"; // we will get this from the auth api call
+	m_authToken = response["Token"].asString();
 	return true;
 }
 

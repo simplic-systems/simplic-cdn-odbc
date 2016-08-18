@@ -10,6 +10,7 @@
 
 #include <curl/curl.h>
 
+static size_t ReceiveJson(void *contents, size_t size, size_t nmemb, void *userp);
 class Statement;
 
 class DbConnection
@@ -28,6 +29,17 @@ private:
 
 	// current result set
 	Json::Value m_apiResult;
+
+	// CURL connection and buffers needed for HTTP I/O
+	CURL *m_curl;
+	std::stringstream m_recvbufJson; // received json data will be stored here
+
+
+	size_t receiveJson(void *contents, size_t size);
+
+	/* CURL needs a plain callback function for handling received data => add that function as a friend 
+	 * so that it can access DbConnection::receiveJson(). */
+	friend size_t ReceiveJson(void *contents, size_t size, size_t nmemb, void *userp);
 
 public:
 	DbConnection(Environment* env);
