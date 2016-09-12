@@ -22,6 +22,15 @@ bool StringInfoField::toOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength, SQLSMA
 	return bytesToCopy <= bufferLength;
 }
 
+bool StringInfoField::toOdbcSegregated(
+	SQLPOINTER      charBuffer,
+	SQLLEN *        numericBuffer,
+	SQLSMALLINT     bufferLength,
+	SQLSMALLINT *   dataLengthPtr)
+{
+	return toOdbc(charBuffer, bufferLength, dataLengthPtr);
+}
+
 OdbcInfoField* StringInfoField::clone()
 {
 	StringInfoField *cloned = new StringInfoField();

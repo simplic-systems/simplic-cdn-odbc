@@ -1,5 +1,6 @@
 #pragma once
 #include "json/json.h"
+#include "Info.h"
 #include <string>
 #include <vector>
 
@@ -8,8 +9,15 @@ class ColumnDescriptor
 {
 private:
 	std::string m_name;
-	uint16_t m_type;
+	int16_t m_type;
 	uint64_t m_size;
+
+	// InfoRecord that is used when the ODBC application requests information about this object.
+	// The InfoRecord object will be initialized on the first request from the application.
+	InfoRecord m_info;
+	bool m_infoInitialized;
+
+	void initInfoRecord();
 
 public:
 
@@ -18,10 +26,17 @@ public:
 
 	void fromJson(const Json::Value & jsonColumn);
 
-	inline uint16_t getType() { return m_type; } 
+	inline int16_t getType() { return m_type; } 
 	inline std::string getName() { return m_name; }
 	inline uint64_t getSize() { return m_size; }
 
+	// used by SQLColAttribute to retrieve fields
+	bool odbcGetField(
+		SQLUSMALLINT    FieldIdentifier,
+		SQLPOINTER      CharacterAttributePtr,
+		SQLSMALLINT     BufferLength,
+		SQLSMALLINT *   StringLengthPtr,
+		SQLLEN *        NumericAttributePtr);
 };
 
 

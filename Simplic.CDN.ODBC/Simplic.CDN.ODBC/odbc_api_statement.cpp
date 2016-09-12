@@ -141,9 +141,22 @@ SQLAPI SQLColAttribute (
         SQLSMALLINT *   StringLengthPtr,
         SQLLEN *        NumericAttributePtr)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	ColumnDescriptor* col = stmt->getColumnDescriptor(ColumnNumber);
+	if (col == NULL) return SQL_ERROR;
+
+	bool result = col->odbcGetField(
+		FieldIdentifier,
+		CharacterAttributePtr,
+		BufferLength,
+		StringLengthPtr,
+		NumericAttributePtr);
+
+	return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 

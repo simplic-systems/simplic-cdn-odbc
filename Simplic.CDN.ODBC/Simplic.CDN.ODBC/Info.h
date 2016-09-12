@@ -11,12 +11,22 @@ class OdbcInfoField
 public:
 	virtual ~OdbcInfoField() = default;
 
+	/** Sets this field using the data from an ODBC-compatible buffer */
 	virtual bool fromOdbc(
 		SQLPOINTER      buffer,
 		SQLSMALLINT     bufferLength) = 0;
 
+	/** Writes the value of this field into an ODBC-compatible buffer */
 	virtual bool toOdbc(
 		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr) = 0;
+
+	/** Writes the value of this field into an ODBC-compatible buffer, using the charBuffer for
+	  * character data and the numericBuffer for numeric data. */
+	virtual bool toOdbcSegregated(
+		SQLPOINTER      charBuffer,
+		SQLLEN *        numericBuffer,
 		SQLSMALLINT     bufferLength,
 		SQLSMALLINT *   dataLengthPtr) = 0;
 
@@ -41,6 +51,12 @@ public:
 
 	virtual bool toOdbc(
 		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr) = 0;
+
+	virtual bool toOdbcSegregated(
+		SQLPOINTER      charBuffer,
+		SQLLEN *        numericBuffer,
 		SQLSMALLINT     bufferLength,
 		SQLSMALLINT *   dataLengthPtr) = 0;
 
@@ -70,6 +86,12 @@ public:
 		SQLSMALLINT     bufferLength,
 		SQLSMALLINT *   dataLengthPtr);
 
+	virtual bool toOdbcSegregated(
+		SQLPOINTER      charBuffer,
+		SQLLEN *        numericBuffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr);
+
 	virtual OdbcInfoField* clone();
 };
 
@@ -86,6 +108,12 @@ public:
 
 	virtual bool toOdbc(
 		SQLPOINTER      buffer,
+		SQLSMALLINT     bufferLength,
+		SQLSMALLINT *   dataLengthPtr);
+
+	virtual bool toOdbcSegregated(
+		SQLPOINTER      charBuffer,
+		SQLLEN *        numericBuffer,
 		SQLSMALLINT     bufferLength,
 		SQLSMALLINT *   dataLengthPtr);
 

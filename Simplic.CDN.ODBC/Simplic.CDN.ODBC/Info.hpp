@@ -45,6 +45,16 @@ bool FixedSizeInfoField<T>::toOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength, 
 }
 
 template<typename T>
+bool FixedSizeInfoField<T>::toOdbcSegregated(
+	SQLPOINTER      charBuffer,
+	SQLLEN *        numericBuffer,
+	SQLSMALLINT     bufferLength,
+	SQLSMALLINT *   dataLengthPtr)
+{
+	return toOdbc((SQLPOINTER)numericBuffer, bufferLength, dataLengthPtr);
+}
+
+template<typename T>
 OdbcInfoField* FixedSizeInfoField<T>::clone()
 {
 	FixedSizeInfoField<T> *cloned = new FixedSizeInfoField<T>();
