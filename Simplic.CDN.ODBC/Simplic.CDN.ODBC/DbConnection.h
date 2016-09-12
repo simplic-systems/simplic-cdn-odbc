@@ -28,8 +28,7 @@ private:
 	std::string m_paramString;
 	uint32_t m_timeout;
 
-	// current result set
-	Json::Value m_apiResult;
+	
 
 	// CURL connection and buffers needed for HTTP I/O
 	CURL *m_curl;
@@ -63,13 +62,9 @@ public:
 
 	void setTimeout(uint32_t timeout);
 
-	
-	inline Json::Value* getApiResult() { return &m_apiResult; }
 // commands
 	bool connect(std::string url, std::string user, std::string password);
-	Json::Value * executeCommand(const std::string & command, const Json::Value & parameters);
-	bool fetch(std::vector<Json::Value*>& result, uint32_t fromRow, uint32_t numRows);
-
-
+	bool executeCommand(Json::Value& result, const std::string & command, const Json::Value & parameters);
+	
 };
 

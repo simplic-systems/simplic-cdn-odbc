@@ -160,7 +160,7 @@ bool DbConnection::connect(std::string url, std::string user, std::string passwo
 	return true;
 }
 
-Json::Value* DbConnection::executeCommand(const std::string & command, const Json::Value & parameters)
+bool DbConnection::executeCommand(Json::Value& apiResult, const std::string & command, const Json::Value & parameters)
 {
 	// TODO: Clean up the curl stuff by putting it in separate methods.
 	// URL-encode parameters
@@ -170,34 +170,19 @@ Json::Value* DbConnection::executeCommand(const std::string & command, const Jso
 	curlPrepareReceiveJson();
 	curlPrepareAuth();
 	curlPrepareGet(std::string("odbc/") + command, parameters);
-	CURLcode result = curlPerformRequest();
+	CURLcode curlresult = curlPerformRequest();
 	long httpresult = curlGetHttpStatusCode();
-	if (result != CURLE_OK || httpresult < 200 || httpresult > 299)
+	if (curlresult != CURLE_OK || httpresult < 200 || httpresult > 299)
 	{
-		m_apiResult = Json::Value(); // clear result object if parsing failed
-		return &m_apiResult;
+		apiResult = Json::Value(); // clear result object if parsing failed
+		return false;
 	}
 
 	Json::Reader reader;
-	if (!reader.parse(m_recvbufJson.str(), m_apiResult, false)) // parse responseString into response, skipping comments
+	if (!reader.parse(m_recvbufJson.str(), apiResult, false)) // parse responseString into response, skipping comments
 	{
-		m_apiResult = Json::Value(); // clear result object if parsing failed
-	}
-
-	return &m_apiResult;
-}
-
-bool DbConnection::fetch(std::vector<Json::Value*> & result, uint32_t fromRow, uint32_t numRows)
-{
-	result.clear();
-	Json::Value& rows = m_apiResult["Rows"];
-	if (rows.isNull()) return false;
-
-	uint32_t rowsAvailable = rows.size();
-
-	for (uint32_t i = fromRow; i < fromRow + numRows && i < rowsAvailable; ++i)
-	{
-		result.push_back(&rows[i]);
+		apiResult = Json::Value(); // clear result object if parsing failed
+		return false;
 	}
 
 	return true;

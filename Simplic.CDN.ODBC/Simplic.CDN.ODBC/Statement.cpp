@@ -27,6 +27,11 @@ uint32_t Statement::getNumFetchedRows()
 	return (uint32_t) m_currentResult.rows().size();
 }
 
+void Statement::setQuery(const std::string& query)
+{
+	m_query = query;
+}
+
 
 SQLRETURN Statement::getData(SQLUSMALLINT Col_or_Param_Num, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr)
 {
@@ -44,19 +49,23 @@ bool Statement::getTables(std::string catalogName, std::string schemaName, std::
 {
 	m_cursorPos = 0;
 
-	Json::Value parameters, *result;
+	Json::Value parameters;
 	parameters["catalog"] = catalogName;
 	parameters["schema"] = schemaName;
 	parameters["table"] = tableName;
 	parameters["tableType"] = tableType;
 
-	result = m_connection->executeCommand("gettables", parameters);
-	if(result->isNull())
+	if(!m_connection->executeCommand(m_apiResult, "gettables", parameters))
 	{
 		return false;
 	}
 
-	return m_currentResult.fromJson(*result);
+	return m_currentResult.fromJson(m_apiResult);
+}
+
+bool Statement::execute()
+{
+	return false;
 }
 
 
@@ -64,19 +73,18 @@ SQLRETURN Statement::getColumns(std::string catalogName, std::string schemaName,
 {
 	m_cursorPos = 0;
 
-	Json::Value parameters, *result;
+	Json::Value parameters;
 	parameters["catalog"] = catalogName;
 	parameters["schema"] = schemaName;
 	parameters["table"] = tableName;
 	parameters["columnname"] = columnName;
 
-	result = m_connection->executeCommand("getcolumns", parameters);
-	if (result->isNull())
+	if (m_connection->executeCommand(m_apiResult, "getcolumns", parameters))
 	{
 		return false;
 	}
 
-	return m_currentResult.fromJson(*result);
+	return m_currentResult.fromJson(m_apiResult);
 }
 
 bool Statement::fetchNext()
@@ -88,7 +96,20 @@ bool Statement::fetchNext()
 
 bool Statement::fetch(uint32_t fromRow, uint32_t numRows)
 {
-	return m_connection->fetch(m_currentResult.rows(), fromRow, numRows);
+	//return m_connection->fetch(m_currentResult.rows(), fromRow, numRows);
+
+	m_currentResult.rows().clear();
+	Json::Value& rows = m_apiResult["Rows"];
+	if (rows.isNull()) return false;
+
+	uint32_t rowsAvailable = rows.size();
+
+	for (uint32_t i = fromRow; i < fromRow + numRows && i < rowsAvailable; ++i)
+	{
+		m_currentResult.rows().push_back(&rows[i]);
+	}
+
+	return true;
 }
 
 // parse results and meta-information from json.

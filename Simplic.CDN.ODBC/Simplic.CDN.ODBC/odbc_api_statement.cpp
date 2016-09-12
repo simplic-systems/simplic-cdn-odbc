@@ -359,9 +359,13 @@ SQLAPI SQLTables(
 SQLAPI SQLExecute(
         SQLHSTMT     StatementHandle)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	bool result = stmt->execute();
+	return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -373,9 +377,13 @@ SQLAPI SQLExecDirect(
         SQLCHAR *    StatementText,
         SQLINTEGER   TextLength)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	bool result = stmt->execute();
+	return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -387,9 +395,16 @@ SQLAPI SQLPrepare(
         SQLCHAR *     StatementText,
         SQLINTEGER    TextLength)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
+	stmt->setQuery(query);
+
+	bool result = stmt->execute();
+	return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
