@@ -382,6 +382,9 @@ SQLAPI SQLExecDirect(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
+	std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
+	stmt->setQuery(query);
+
 	bool result = stmt->execute();
 	return result ? SQL_SUCCESS : SQL_ERROR;
 }
@@ -403,8 +406,7 @@ SQLAPI SQLPrepare(
 	std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
 	stmt->setQuery(query);
 
-	bool result = stmt->execute();
-	return result ? SQL_SUCCESS : SQL_ERROR;
+	return SQL_SUCCESS;
 }
 
 

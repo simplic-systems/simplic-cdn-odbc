@@ -35,6 +35,7 @@ private:
 	curl_slist *m_headers;
 	std::stringstream m_recvbufJson; // received json data will be stored here
 
+	bool executeCommand(Json::Value& result, const std::string & command, const Json::Value & parameters, bool isPost);
 	size_t receiveJson(void *contents, size_t size);
 
 	void curlReset();
@@ -64,7 +65,7 @@ public:
 
 // commands
 	bool connect(std::string url, std::string user, std::string password);
-	bool executeCommand(Json::Value& result, const std::string & command, const Json::Value & parameters);
-	
+	bool executeGetCommand(Json::Value& result, const std::string & command, const Json::Value & parameters);
+	bool executePostCommand(Json::Value& result, const std::string & command, const Json::Value & parameters);
 };
 

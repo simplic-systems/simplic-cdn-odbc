@@ -160,16 +160,15 @@ bool DbConnection::connect(std::string url, std::string user, std::string passwo
 	return true;
 }
 
-bool DbConnection::executeCommand(Json::Value& apiResult, const std::string & command, const Json::Value & parameters)
+bool DbConnection::executeCommand(Json::Value& apiResult, const std::string & command, const Json::Value & parameters, bool isPost)
 {
-	// TODO: Clean up the curl stuff by putting it in separate methods.
-	// URL-encode parameters
-	std::string parameterString = encodeGetParameters(parameters);
-
 	curlReset();
 	curlPrepareReceiveJson();
 	curlPrepareAuth();
-	curlPrepareGet(std::string("odbc/") + command, parameters);
+	if(isPost)
+		curlPreparePost(std::string("odbc/") + command, parameters);
+	else
+		curlPrepareGet(std::string("odbc/") + command, parameters);
 	CURLcode curlresult = curlPerformRequest();
 	long httpresult = curlGetHttpStatusCode();
 	if (curlresult != CURLE_OK || httpresult < 200 || httpresult > 299)
@@ -187,3 +186,14 @@ bool DbConnection::executeCommand(Json::Value& apiResult, const std::string & co
 
 	return true;
 }
+
+bool DbConnection::executeGetCommand(Json::Value& apiResult, const std::string & command, const Json::Value & parameters)
+{
+	return executeCommand(apiResult, command, parameters, false);
+}
+
+bool DbConnection::executePostCommand(Json::Value& apiResult, const std::string & command, const Json::Value & parameters)
+{
+	return executeCommand(apiResult, command, parameters, true);
+}
+

@@ -55,17 +55,12 @@ bool Statement::getTables(std::string catalogName, std::string schemaName, std::
 	parameters["table"] = tableName;
 	parameters["tableType"] = tableType;
 
-	if(!m_connection->executeCommand(m_apiResult, "gettables", parameters))
+	if(!m_connection->executeGetCommand(m_apiResult, "gettables", parameters))
 	{
 		return false;
 	}
 
 	return m_currentResult.fromJson(m_apiResult);
-}
-
-bool Statement::execute()
-{
-	return false;
 }
 
 
@@ -79,7 +74,26 @@ SQLRETURN Statement::getColumns(std::string catalogName, std::string schemaName,
 	parameters["table"] = tableName;
 	parameters["columnname"] = columnName;
 
-	if (m_connection->executeCommand(m_apiResult, "getcolumns", parameters))
+	if (!m_connection->executeGetCommand(m_apiResult, "getcolumns", parameters))
+	{
+		return false;
+	}
+
+	return m_currentResult.fromJson(m_apiResult);
+}
+
+
+bool Statement::execute()
+{
+	m_cursorPos = 0;
+
+	Json::Value parameters;
+	parameters["query"] = m_query;
+
+	// TODO: Pass all bound parameters
+	parameters["parameters"] = Json::Value(Json::arrayValue); 
+
+	if (!m_connection->executePostCommand(m_apiResult, "execute", parameters))
 	{
 		return false;
 	}
