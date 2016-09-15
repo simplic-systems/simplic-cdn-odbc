@@ -45,11 +45,11 @@ bool Statement::bindColumn(uint16_t columnNumber, int16_t targetType, SQLLEN buf
 SQLRETURN Statement::getData(SQLUSMALLINT Col_or_Param_Num, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr)
 {
 	const Json::Value & row = *m_currentResult.rows()[0];
-	--Col_or_Param_Num; // In ODBC, columns are counted starting from 1 => remove that offset
 	if (Col_or_Param_Num >= row.size()) return SQL_ERROR;
 
-	const Json::Value & value = row[Col_or_Param_Num];
-	return OdbcTypeConverter::getInstance()->jsonToOdbc(&value, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
+	const Json::Value & value = row[Col_or_Param_Num-1]; // subtract 1 to account for the missing "bookmark column"
+	ColumnDescriptor* meta = m_currentResult.column(Col_or_Param_Num);
+	return OdbcTypeConverter::getInstance()->jsonToOdbc(&value, meta, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
 
 }
 
@@ -141,7 +141,3 @@ bool Statement::fetch(uint32_t fromRow, uint32_t numRows)
 
 	return true;
 }
-
-// parse results and meta-information from json.
-// store the meta-information explicitly in data structures,
-// keep the result set as a json object.

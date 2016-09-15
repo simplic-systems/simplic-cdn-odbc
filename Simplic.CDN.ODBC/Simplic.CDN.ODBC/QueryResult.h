@@ -26,9 +26,9 @@ public:
 
 	void fromJson(const Json::Value & jsonColumn);
 
-	inline int16_t getType() { return m_type; } 
-	inline std::string getName() { return m_name; }
-	inline uint64_t getSize() { return m_size; }
+	inline int16_t getType() const { return m_type; } 
+	inline std::string getName() const { return m_name; }
+	inline uint64_t getSize() const { return m_size; }
 
 	// used by SQLColAttribute to retrieve fields
 	bool odbcGetField(

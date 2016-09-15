@@ -60,7 +60,7 @@ public:
 
 	/** Converts the specified json value to the type specified by this descriptor item
 	 *  and writes the converted value into the bound buffer. */
-	SQLRETURN toBoundBuffer(const Json::Value* jsonValue);
+	SQLRETURN toBoundBuffer(const Json::Value* jsonValue, const ColumnDescriptor* metaData);
 
 	inline bool isBufferBound() { return m_targetPointer != NULL; }
 };

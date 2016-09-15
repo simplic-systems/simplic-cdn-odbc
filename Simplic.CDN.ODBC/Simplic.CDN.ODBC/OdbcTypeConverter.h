@@ -1,5 +1,6 @@
 #pragma once
 
+#include "QueryResult.h"
 #include "json/json.h"
 #include "odbc_api.h"
 
@@ -8,6 +9,7 @@
 
 typedef std::function<SQLRETURN(
 	const Json::Value* jsonValue,
+	const ColumnDescriptor* metaData,
 	SQLSMALLINT TargetType,
 	SQLPOINTER TargetValuePtr,
 	SQLLEN BufferLength,
@@ -36,6 +38,7 @@ public:
 
 	SQLRETURN jsonToOdbc(
 		const Json::Value* jsonValue,
+		const ColumnDescriptor* metaData,
 		SQLSMALLINT TargetType,
 		SQLPOINTER TargetValuePtr,
 		SQLLEN BufferLength,

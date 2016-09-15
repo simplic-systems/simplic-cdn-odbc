@@ -24,12 +24,14 @@ SQLRETURN ApplicationDataDescriptor::populateBoundBuffersFromResultSet(QueryResu
 	for (auto it = m_items.begin(); it != m_items.end(); ++it)
 	{
 		uint16_t columnOrParamNum = it->first;
+		
 		const Json::Value& jsonRow = *(resultSet.rows()[0]); // use first row
-		const Json::Value& jsonValue = jsonRow[columnOrParamNum - 1];
+		const Json::Value& jsonValue = jsonRow[columnOrParamNum-1]; // subtract 1 because jsonRow does not contain the bookmark column
+		ColumnDescriptor* meta = resultSet.column(columnOrParamNum);
 
 		if (it->second.isBufferBound())
 		{
-			SQLRETURN result = it->second.toBoundBuffer(&jsonValue);
+			SQLRETURN result = it->second.toBoundBuffer(&jsonValue, meta);
 			success &= result == SQL_SUCCESS;
 		}
 	}
@@ -52,10 +54,11 @@ ApplicationDataDescriptorItem::ApplicationDataDescriptorItem(int16_t targetType,
 }
 
 
-SQLRETURN ApplicationDataDescriptorItem::toBoundBuffer(const Json::Value * jsonValue)
+SQLRETURN ApplicationDataDescriptorItem::toBoundBuffer(const Json::Value * jsonValue, const ColumnDescriptor* metaData )
 {
 	return OdbcTypeConverter::getInstance()->jsonToOdbc(
 		jsonValue,
+		metaData,
 		m_targetType,
 		m_targetPointer,
 		m_bufferLength,
