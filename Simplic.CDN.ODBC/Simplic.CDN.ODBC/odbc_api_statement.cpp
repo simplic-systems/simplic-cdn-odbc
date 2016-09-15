@@ -18,9 +18,20 @@ SQLAPI SQLBindCol(
       SQLLEN         BufferLength,
       SQLLEN *       StrLen_or_Ind)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	bool result = stmt->bindColumn(
+		ColumnNumber,
+		TargetType,
+		BufferLength,
+		(void*)TargetValuePtr,
+		StrLen_or_Ind
+	);
+
+	return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 

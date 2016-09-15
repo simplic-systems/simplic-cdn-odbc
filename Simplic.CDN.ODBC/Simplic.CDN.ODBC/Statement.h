@@ -2,9 +2,9 @@
 
 #include "DbConnection.h"
 #include "QueryResult.h"
+#include "ApplicationDataDescriptor.h"
 #include "json/json.h"
-
-#include <sqltypes.h>
+#include "odbc_api.h"
 
 #include <set>
 #include <mutex>
@@ -26,6 +26,17 @@ private:
 	// current result set from the last API call
 	Json::Value m_apiResult;
 
+	// ARD / APD data structures containing information about bound
+	// columns and parameters respectively.
+	ApplicationDataDescriptor m_implicitRowDescriptor;
+	ApplicationDataDescriptor m_implicitParameterDescriptor;
+
+	// Active ARD / APD instances. These point to the implicit descriptors above
+	// unless the application explicitly specified another descriptor.
+	ApplicationDataDescriptor* m_activeRowDescriptor;
+	ApplicationDataDescriptor* m_activeParameterDescriptor;
+
+
 public:
 	Statement(DbConnection* conn);
 	~Statement();
@@ -38,6 +49,14 @@ public:
 
 	// Set the query string (for prepared statements or directly executed queries)
 	void setQuery(const std::string& query);
+
+	// ##### buffer binding #####
+	bool bindColumn(
+		uint16_t columnNumber,
+		int16_t targetType,
+		SQLLEN bufferLength,
+		void* targetPointer,
+		SQLLEN* indicatorPointer);
 
 	// ##### data retrieval #####
 	SQLRETURN getData(SQLUSMALLINT Col_or_Param_Num, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr);

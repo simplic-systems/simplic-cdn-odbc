@@ -1,9 +1,8 @@
 #include "stdafx.h"
 #include "QueryResult.h"
 #include "OdbcTypeConverter.h"
+#include "odbc_api.h"
 
-#include <sqltypes.h>
-#include <sql.h>
 #include <sqlext.h>
 
 

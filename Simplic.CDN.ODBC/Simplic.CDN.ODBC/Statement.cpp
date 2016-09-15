@@ -1,14 +1,13 @@
 #include "stdafx.h"
 #include "Statement.h"
 #include "OdbcTypeConverter.h"
-
-#include <sql.h>
-#include <sqltypes.h>
+#include "odbc_api.h"
 
 Statement::Statement(DbConnection* conn)
 {
-
 	m_connection = conn;
+	m_activeRowDescriptor = &m_implicitRowDescriptor;
+	m_activeParameterDescriptor = &m_implicitParameterDescriptor;
 }
 
 
@@ -30,6 +29,16 @@ uint32_t Statement::getNumFetchedRows()
 void Statement::setQuery(const std::string& query)
 {
 	m_query = query;
+}
+
+bool Statement::bindColumn(uint16_t columnNumber, int16_t targetType, SQLLEN bufferLength, void * targetPointer, SQLLEN * indicatorPointer)
+{
+	return m_activeRowDescriptor->bind(
+		columnNumber,
+		targetType,
+		bufferLength,
+		targetPointer,
+		indicatorPointer);
 }
 
 
@@ -116,11 +125,18 @@ bool Statement::fetch(uint32_t fromRow, uint32_t numRows)
 	Json::Value& rows = m_apiResult["Rows"];
 	if (rows.isNull()) return false;
 
-	uint32_t rowsAvailable = rows.size();
+	uint32_t rowsAvailable = rows.size() - fromRow;
 
-	for (uint32_t i = fromRow; i < fromRow + numRows && i < rowsAvailable; ++i)
+	// write data to the internal result set
+	for (uint32_t i = fromRow; i < fromRow + min(numRows, rowsAvailable); ++i)
 	{
 		m_currentResult.rows().push_back(&rows[i]);
+	}
+
+	// write data to the bound buffers
+	if (rowsAvailable > 0)
+	{
+		m_activeRowDescriptor->populateBoundBuffersFromResultSet(m_currentResult);
 	}
 
 	return true;

@@ -1,26 +1,58 @@
 #include "stdafx.h"
 #include "OdbcTypeConverter.h"
 #include "Helper.h"
-#include <sql.h>
+#include "odbc_api.h"
 #include <sqlext.h>
+#include <stdint.h>
 
 OdbcTypeConverter* OdbcTypeConverter::_singletonInstance;
 
 SQLRETURN convertToOdbcVarchar(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
+
+SQLRETURN convertToOdbcLongInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
 SQLRETURN convertToOdbcInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
 SQLRETURN convertToOdbcSmallInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
+SQLRETURN convertToOdbcTinyInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
+
+SQLRETURN convertToOdbcUnsignedLongInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
+SQLRETURN convertToOdbcUnsignedInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
+SQLRETURN convertToOdbcUnsignedSmallInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
+SQLRETURN convertToOdbcUnsignedTinyInteger(const Json::Value* jsonValue, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPt);
 
 
 OdbcTypeConverter::OdbcTypeConverter()
 {
 	// add all conversion functions we want to use 
+	// Note: In ODBC terminology, the different-length integers are defined as follows:
+	// BIGINT = 64 bits
+	// INTEGER = 32 bits
+	// LONG = 32 bits
+	// SHORT = 16 bits
+	// TINY = 8 bits
+
+	// --- SQL data types ---
 	m_toOdbcConverters[SQL_VARCHAR] = JsonToOdbcConverter(convertToOdbcVarchar);
 	m_toOdbcConverters[SQL_CHAR] = JsonToOdbcConverter(convertToOdbcVarchar);
+
+	m_toOdbcConverters[SQL_BIGINT] = JsonToOdbcConverter(convertToOdbcLongInteger);
 	m_toOdbcConverters[SQL_INTEGER ] = JsonToOdbcConverter(convertToOdbcInteger);
 	m_toOdbcConverters[SQL_SMALLINT] = JsonToOdbcConverter(convertToOdbcSmallInteger);
-	m_toOdbcConverters[-15] = JsonToOdbcConverter(convertToOdbcSmallInteger); //TODO: HACK; find out what this "-15" type actually means!
+	m_toOdbcConverters[SQL_TINYINT] = JsonToOdbcConverter(convertToOdbcTinyInteger);
 
-	// Column lengths by type.
+
+	// --- C data types ---
+	m_toOdbcConverters[SQL_C_SBIGINT] = JsonToOdbcConverter(convertToOdbcLongInteger);
+	m_toOdbcConverters[SQL_C_SLONG]   = JsonToOdbcConverter(convertToOdbcInteger);
+	m_toOdbcConverters[SQL_C_SSHORT] = JsonToOdbcConverter(convertToOdbcSmallInteger);
+	m_toOdbcConverters[SQL_C_STINYINT] = JsonToOdbcConverter(convertToOdbcTinyInteger);
+
+	m_toOdbcConverters[SQL_C_UBIGINT]  = JsonToOdbcConverter(convertToOdbcUnsignedLongInteger);
+	m_toOdbcConverters[SQL_C_ULONG]    = JsonToOdbcConverter(convertToOdbcUnsignedInteger);
+	m_toOdbcConverters[SQL_C_USHORT]   = JsonToOdbcConverter(convertToOdbcUnsignedSmallInteger);
+	m_toOdbcConverters[SQL_C_UTINYINT] = JsonToOdbcConverter(convertToOdbcUnsignedTinyInteger);
+
+
+	// Column lengths by type. See https://msdn.microsoft.com/en-us/library/ms711786(v=vs.85).aspx
 	// Note: This list of types is not complete, the length of some types depends on precision/length parameters.
 	m_columnSizes[SQL_BIT] = 1;
 	m_columnSizes[SQL_TINYINT] = 3;
@@ -105,6 +137,19 @@ static SQLRETURN convertToOdbcVarchar(
 	return SQL_SUCCESS;
 }
 
+static SQLRETURN convertToOdbcLongInteger(
+	const Json::Value* jsonValue,
+	SQLSMALLINT TargetType,
+	SQLPOINTER TargetValuePtr,
+	SQLLEN BufferLength,
+	SQLLEN *StrLen_or_IndPt)
+{
+	*(int64_t*)TargetValuePtr = jsonValue->asInt64();
+	if (StrLen_or_IndPt != NULL) *StrLen_or_IndPt = sizeof(int64_t);
+	return SQL_SUCCESS;
+}
+
+
 static SQLRETURN convertToOdbcInteger(
 	const Json::Value* jsonValue,
 	SQLSMALLINT TargetType,
@@ -117,6 +162,7 @@ static SQLRETURN convertToOdbcInteger(
 	return SQL_SUCCESS;
 }
 
+
 static SQLRETURN convertToOdbcSmallInteger(
 	const Json::Value* jsonValue,
 	SQLSMALLINT TargetType,
@@ -126,5 +172,72 @@ static SQLRETURN convertToOdbcSmallInteger(
 {
 	*(SQLSMALLINT*)TargetValuePtr = (SQLSMALLINT)jsonValue->asInt();
 	if (StrLen_or_IndPt != NULL) *StrLen_or_IndPt = sizeof(SQLSMALLINT);
+	return SQL_SUCCESS;
+}
+
+static SQLRETURN convertToOdbcTinyInteger(
+	const Json::Value* jsonValue,
+	SQLSMALLINT TargetType,
+	SQLPOINTER TargetValuePtr,
+	SQLLEN BufferLength,
+	SQLLEN *StrLen_or_IndPt)
+{
+	*(int8_t*)TargetValuePtr = (int8_t)jsonValue->asInt();
+	if (StrLen_or_IndPt != NULL) *StrLen_or_IndPt = sizeof(int8_t);
+	return SQL_SUCCESS;
+}
+
+
+
+
+
+
+static SQLRETURN convertToOdbcUnsignedLongInteger(
+	const Json::Value* jsonValue,
+	SQLSMALLINT TargetType,
+	SQLPOINTER TargetValuePtr,
+	SQLLEN BufferLength,
+	SQLLEN *StrLen_or_IndPt)
+{
+	*(uint64_t*)TargetValuePtr = jsonValue->asUInt64();
+	if (StrLen_or_IndPt != NULL) *StrLen_or_IndPt = sizeof(uint64_t);
+	return SQL_SUCCESS;
+}
+
+
+static SQLRETURN convertToOdbcUnsignedInteger(
+	const Json::Value* jsonValue,
+	SQLSMALLINT TargetType,
+	SQLPOINTER TargetValuePtr,
+	SQLLEN BufferLength,
+	SQLLEN *StrLen_or_IndPt)
+{
+	*(unsigned int*)TargetValuePtr = jsonValue->asUInt();
+	if (StrLen_or_IndPt != NULL) *StrLen_or_IndPt = sizeof(unsigned int);
+	return SQL_SUCCESS;
+}
+
+
+static SQLRETURN convertToOdbcUnsignedSmallInteger(
+	const Json::Value* jsonValue,
+	SQLSMALLINT TargetType,
+	SQLPOINTER TargetValuePtr,
+	SQLLEN BufferLength,
+	SQLLEN *StrLen_or_IndPt)
+{
+	*(SQLUSMALLINT*)TargetValuePtr = (SQLUSMALLINT)jsonValue->asUInt();
+	if (StrLen_or_IndPt != NULL) *StrLen_or_IndPt = sizeof(SQLUSMALLINT);
+	return SQL_SUCCESS;
+}
+
+static SQLRETURN convertToOdbcUnsignedTinyInteger(
+	const Json::Value* jsonValue,
+	SQLSMALLINT TargetType,
+	SQLPOINTER TargetValuePtr,
+	SQLLEN BufferLength,
+	SQLLEN *StrLen_or_IndPt)
+{
+	*(uint8_t*)TargetValuePtr = (uint8_t)jsonValue->asUInt();
+	if (StrLen_or_IndPt != NULL) *StrLen_or_IndPt = sizeof(uint8_t);
 	return SQL_SUCCESS;
 }

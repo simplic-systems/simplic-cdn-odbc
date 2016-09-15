@@ -1,8 +1,8 @@
 #pragma once
 
 #include "json/json.h"
+#include "odbc_api.h"
 
-#include <sqltypes.h>
 #include <map>
 #include <functional>
 
