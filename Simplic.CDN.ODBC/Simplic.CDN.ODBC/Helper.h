@@ -18,4 +18,6 @@ public:
 
 	static void stringToOdbc(std::string strIn, char* buf, uint16_t buflength, uint16_t *lengthPtr);
 
+	static bool isBinaryType(int16_t type);
+
 };

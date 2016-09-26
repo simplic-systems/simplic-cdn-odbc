@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Helper.h"
+#include <sqlext.h>
 
 std::string Helper::stringFromOdbc(char * strIn, long length)
 {
@@ -21,4 +22,17 @@ void Helper::stringToOdbc(std::string strIn, char* buf, uint16_t buflength, uint
 	}
 
 	if (lengthPtr != NULL) *lengthPtr = totalLength;
+}
+
+bool Helper::isBinaryType(int16_t type)
+{
+	switch (type)
+	{
+	case SQL_BINARY:
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
+		return true;
+	default:
+		return false;
+	}
 }

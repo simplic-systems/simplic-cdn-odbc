@@ -11,6 +11,7 @@
 #include <curl/curl.h>
 
 static size_t ReceiveJson(void *contents, size_t size, size_t nmemb, void *userp);
+static size_t ReceiveData(void *contents, size_t size, size_t nmemb, void *userp);
 class Statement;
 
 class DbConnection
@@ -32,20 +33,38 @@ private:
 
 	// CURL connection and buffers needed for HTTP I/O
 	CURL *m_curl;
+	// special curl handles for uploads and downloads
+	CURL *m_curlTransfer;
+	CURLM *m_curlTransferMulti; 
+
 	curl_slist *m_headers;
 	std::stringstream m_recvbufJson; // received json data will be stored here
 
+	// Binary data is downloaded into m_recvbuf which points to an application-
+	// supplied buffer. Excess data is written into m_recvbufOverflow and copied
+	// to the application's buffer in the next downloadChunk() call.
+	uint8_t* m_recvbuf;
+	uint64_t m_recvbufLength; // remaining size of m_recvbuf in bytes
+	std::vector<uint8_t> m_recvbufOverflow;
+	// offset from which to start reading data into the application buffer
+	size_t m_recvbufOverflowOffset; 
+
+	// Indicates whether the curl handle is currently downloading a binary.
+	bool m_isDownloadPending;
+
+
 	bool executeCommand(Json::Value& result, const std::string & command, const Json::Value & parameters, bool isPost);
 	size_t receiveJson(void *contents, size_t size);
+	size_t receiveData(void *contents, size_t size);
 
-	void curlReset();
-	void curlPrepareReceiveJson();
-	void curlPrepareAuth();
-	void curlPrepareGet(std::string endpoint, const Json::Value& parameters);
-	void curlPreparePost(std::string endpoint, const Json::Value& parameters);
-	CURLcode curlPerformRequest();
-
-	long curlGetHttpStatusCode();
+	void curlReset(CURL* curl);
+	void curlPrepareReceiveJson(CURL* curl);
+	void curlPrepareReceiveData(CURL* curl);
+	void curlPrepareAuth(CURL* curl);
+	void curlPrepareGet(CURL* curl, std::string endpoint, const Json::Value& parameters);
+	void curlPreparePost(CURL* curl, std::string endpoint, const Json::Value& parameters);
+	CURLcode curlPerformRequest(CURL* curl);
+	long curlGetHttpStatusCode(CURL* curl);
 
 	// helper methods
 	std::string encodeGetParameters(const Json::Value& parameters);
@@ -53,6 +72,7 @@ private:
 	/* CURL needs a plain callback function for handling received data => add that function as a friend 
 	 * so that it can access DbConnection::receiveJson(). */
 	friend size_t ReceiveJson(void *contents, size_t size, size_t nmemb, void *userp);
+	friend size_t ReceiveData(void *contents, size_t size, size_t nmemb, void *userp);
 
 public:
 	DbConnection(Environment* env);
@@ -67,5 +87,10 @@ public:
 	bool connect(std::string url, std::string user, std::string password);
 	bool executeGetCommand(Json::Value& result, const std::string & command, const Json::Value & parameters);
 	bool executePostCommand(Json::Value& result, const std::string & command, const Json::Value & parameters);
+
+// binary up/download
+	void resetTransfer();
+	bool beginDownload(const std::string & path, int64_t offset = 0, int64_t size = 0);
+	int64_t downloadChunk(void* result, uint64_t size, bool* completed = NULL);
 };
 

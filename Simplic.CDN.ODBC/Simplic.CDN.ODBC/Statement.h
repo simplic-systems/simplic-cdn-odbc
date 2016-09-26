@@ -36,6 +36,18 @@ private:
 	ApplicationDataDescriptor* m_activeRowDescriptor;
 	ApplicationDataDescriptor* m_activeParameterDescriptor;
 
+	// Information about the current pending binary download
+	bool m_isDownloadPending;
+	SQLUSMALLINT m_downloadColumn;
+
+	SQLRETURN downloadBinaryChunk(
+		SQLUSMALLINT nColumn,
+		SQLPOINTER buffer,
+		SQLLEN bufferSize,
+		SQLLEN* strLenIndicator);
+
+	void abortBinaryTransfer();
+
 
 public:
 	Statement(DbConnection* conn);
