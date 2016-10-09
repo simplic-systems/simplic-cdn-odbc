@@ -7,6 +7,14 @@ ApplicationDataDescriptor::ApplicationDataDescriptor()
 { }
 
 
+bool ApplicationDataDescriptor::getItem(size_t nItem, ApplicationDataDescriptorItem& result)
+{
+	auto it = m_items.find(nItem);
+	if (it == m_items.end()) return false;
+	result = it->second;
+	return true;
+}
+
 bool ApplicationDataDescriptor::bind(uint16_t columnOrParamNumber, int16_t targetType, SQLLEN bufferLength, void * targetPointer, SQLLEN * indicatorPointer)
 {
 	if (columnOrParamNumber == 0) return false; // bookmark column is not supported yet
@@ -51,6 +59,14 @@ ApplicationDataDescriptorItem::ApplicationDataDescriptorItem(int16_t targetType,
 	m_bufferLength = bufferLength;
 	m_targetPointer = targetPointer;
 	m_indicatorPointer = indicatorPointer;
+}
+
+ApplicationDataDescriptorItem::ApplicationDataDescriptorItem(const ApplicationDataDescriptorItem& other)
+{
+	m_targetType       = other.getTargetType();
+	m_bufferLength     = other.getBufferLength();
+	m_targetPointer    = other.getTargetPointer();
+	m_indicatorPointer = other.getIndicatorPointer();
 }
 
 

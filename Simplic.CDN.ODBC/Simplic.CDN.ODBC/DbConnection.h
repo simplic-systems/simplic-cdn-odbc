@@ -12,6 +12,7 @@
 
 static size_t ReceiveJson(void *contents, size_t size, size_t nmemb, void *userp);
 static size_t ReceiveData(void *contents, size_t size, size_t nmemb, void *userp);
+static size_t SendData(void *contents, size_t size, size_t nmemb, void *userp);
 class Statement;
 
 class DbConnection
@@ -40,29 +41,36 @@ private:
 	curl_slist *m_headers;
 	std::stringstream m_recvbufJson; // received json data will be stored here
 
-	// Binary data is downloaded into m_recvbuf which points to an application-
-	// supplied buffer. Excess data is written into m_recvbufOverflow and copied
+	// Binary data is downloaded into m_transferBuf which points to an application-
+	// supplied buffer. Excess data is written into m_transferBufOverflow and copied
 	// to the application's buffer in the next downloadChunk() call.
-	uint8_t* m_recvbuf;
-	uint64_t m_recvbufLength; // remaining size of m_recvbuf in bytes
-	std::vector<uint8_t> m_recvbufOverflow;
+	uint8_t* m_transferBuf;
+	uint64_t m_transferBufLength; // remaining size of m_transferBuf in bytes
+	std::vector<uint8_t> m_transferBufOverflow;
 	// offset from which to start reading data into the application buffer
-	size_t m_recvbufOverflowOffset; 
+	size_t m_transferBufOverflowOffset; 
 
-	// Indicates whether the curl handle is currently downloading a binary.
-	bool m_isDownloadPending;
+	// Indicates whether the curl handle is currently downloading/uploading a binary.
+	bool m_isDownloadPending, m_isUploadPending;
+
+	// Indicates that the current upload is complete. The sendData function uses this
+	// to decide whether to end the transfer.
+	bool m_isUploadFinished; 
 
 
 	bool executeCommand(Json::Value& result, const std::string & command, const Json::Value & parameters, bool isPost);
 	size_t receiveJson(void *contents, size_t size);
 	size_t receiveData(void *contents, size_t size);
+	size_t sendData(void *contents, size_t size);
 
 	void curlReset(CURL* curl);
 	void curlPrepareReceiveJson(CURL* curl);
 	void curlPrepareReceiveData(CURL* curl);
+	void curlPrepareSendData(CURL* curl);
 	void curlPrepareAuth(CURL* curl);
 	void curlPrepareGet(CURL* curl, std::string endpoint, const Json::Value& parameters);
 	void curlPreparePost(CURL* curl, std::string endpoint, const Json::Value& parameters);
+	void curlPrepareBinaryPost(CURL* curl, std::string endpoint);
 	CURLcode curlPerformRequest(CURL* curl);
 	long curlGetHttpStatusCode(CURL* curl);
 
@@ -73,6 +81,7 @@ private:
 	 * so that it can access DbConnection::receiveJson(). */
 	friend size_t ReceiveJson(void *contents, size_t size, size_t nmemb, void *userp);
 	friend size_t ReceiveData(void *contents, size_t size, size_t nmemb, void *userp);
+	friend size_t SendData(void *contents, size_t size, size_t nmemb, void *userp);
 
 public:
 	DbConnection(Environment* env);
@@ -92,5 +101,10 @@ public:
 	void resetTransfer();
 	bool beginDownload(const std::string & path, int64_t offset = 0, int64_t size = 0);
 	int64_t downloadChunk(void* result, uint64_t size, bool* completed = NULL);
+
+	bool beginUpload(const std::string & handle);
+	bool finishUpload();
+	bool uploadChunk(void* data, int64_t size);
+
 };
 

@@ -20,6 +20,9 @@ private:
 	QueryResult m_currentResult;
 	uint32_t m_cursorPos;
 
+	// Handle from Simplic.CDN for this statement.
+	std::string m_handle;
+
 	// current SQL query for this statement
 	std::string m_query;
 
@@ -40,13 +43,27 @@ private:
 	bool m_isDownloadPending;
 	SQLUSMALLINT m_downloadColumn;
 
+	// Information about the current parameter that needs
+	// to be uploaded / is being uploaded
+	bool m_isUploadPending;
+	bool m_isFirstParamUpload;
+	SQLUSMALLINT m_currentParameter;
+	ApplicationDataDescriptorItem m_currentParameterDescriptor;
+	Json::Value m_jsonParameters;
+	Json::Value m_currentJsonParameter;
+	std::string m_uploadHandle;
+
 	SQLRETURN downloadBinaryChunk(
 		SQLUSMALLINT nColumn,
 		SQLPOINTER buffer,
 		SQLLEN bufferSize,
 		SQLLEN* strLenIndicator);
 
+	SQLRETURN processParametersAndExecute();
+	SQLRETURN finishExecution();
+
 	void abortBinaryTransfer();
+	void resetParameterUploadState();
 
 
 public:
@@ -70,13 +87,27 @@ public:
 		void* targetPointer,
 		SQLLEN* indicatorPointer);
 
+	bool bindParameter(
+		uint16_t columnNumber,
+		int16_t targetType,
+		SQLLEN bufferLength,
+		void* targetPointer,
+		SQLLEN* indicatorPointer);
+
 	// ##### data retrieval #####
 	SQLRETURN getData(SQLUSMALLINT Col_or_Param_Num, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr);
 	SQLRETURN getColumns(std::string catalogName, std::string schemaName, std::string tableName, std::string columnName);
 
+	// ##### parameter data sending functions #####
+	/// equivalent to SQLParamData ODBC function
+	SQLRETURN paramData(SQLPOINTER* paramInfo);
+	bool putData(SQLPOINTER data, SQLLEN lengthOrIndicator);
+
 	// ##### command execution functions #####
 	bool getTables(std::string catalogName, std::string schemaName, std::string tableName, std::string tableType);
-	bool execute();
+	SQLRETURN execute();
+
+
 
 	bool fetchNext();
 	bool fetch(uint32_t fromRow, uint32_t numRows);

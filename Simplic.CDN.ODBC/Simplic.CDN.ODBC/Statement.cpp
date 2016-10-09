@@ -13,6 +13,9 @@ Statement::Statement(DbConnection* conn)
 	m_activeParameterDescriptor = &m_implicitParameterDescriptor;
 	m_isDownloadPending = false;
 	m_downloadColumn = 0;
+
+	m_isUploadPending = false;
+	m_currentParameter = 0;
 }
 
 
@@ -74,8 +77,71 @@ SQLRETURN Statement::downloadBinaryChunk(
 void Statement::abortBinaryTransfer()
 {
 	m_isDownloadPending = false;
+	m_isUploadPending = false;
 	m_downloadColumn = 0;
 	m_connection->resetTransfer();
+}
+
+void Statement::resetParameterUploadState()
+{
+	abortBinaryTransfer();
+	m_currentParameter = 0;
+	m_jsonParameters.clear();
+	m_currentJsonParameter.clear();
+}
+
+SQLRETURN Statement::processParametersAndExecute()
+{
+	if (m_currentParameter == 0)
+	{
+		m_isFirstParamUpload = true;
+	}
+
+	++m_currentParameter;
+	// iterate through the remaining parameters until we hit a data-at-execution parameter.
+	while (m_activeParameterDescriptor->getItem(m_currentParameter, m_currentParameterDescriptor))
+	{
+		SQLLEN* indicator = m_currentParameterDescriptor.getIndicatorPointer();
+		if (indicator == NULL)
+		{
+			resetParameterUploadState();
+			return SQL_ERROR;
+		}
+
+		m_currentJsonParameter["name"] = NULL;
+		m_currentJsonParameter["value"] = NULL;
+		m_currentJsonParameter["type"] = m_currentParameterDescriptor.getTargetType();
+		
+		if (*indicator == SQL_DATA_AT_EXEC || *indicator <= SQL_LEN_DATA_AT_EXEC_OFFSET)
+		{
+			// data-at-execution parameter: we need to wait for the application to submit
+			// the data via SQLParamData / SQLPutData
+			return SQL_NEED_DATA;
+		}
+
+		// parameter with bound buffer: 
+		// read the data from that buffer and store it as a parameter.
+
+		return SQL_ERROR;
+		// TODO: Add the parameter like this (need to implement OdbcTypeConverter::odbcParamToJson):
+		//m_currentJsonParameter["value"] = OdbcTypeConverter::getInstance()->odbcParamToJson(m_currentParameterDescriptor);
+		//m_jsonParameters.append(m_currentJsonParameter);
+		//
+		//++m_currentParameter;
+	}
+
+	// no more parameters => we can execute the query.
+	m_currentParameter = 0;
+	Json::Value parameters;
+	parameters["Parameters"] = Json::Value(Json::arrayValue);
+	parameters["Handle"] = m_query; // TODO: DUMMY, USE m_handle INSTEAD OF m_query HERE
+
+	if (!m_connection->executePostCommand(m_apiResult, "Execute", parameters))
+		return SQL_ERROR;
+
+
+	bool success = m_currentResult.fromJson(m_apiResult);
+	return success ? SQL_SUCCESS : SQL_ERROR;
 }
 
 ColumnDescriptor* Statement::getColumnDescriptor(uint32_t i)
@@ -96,6 +162,16 @@ void Statement::setQuery(const std::string& query)
 bool Statement::bindColumn(uint16_t columnNumber, int16_t targetType, SQLLEN bufferLength, void * targetPointer, SQLLEN * indicatorPointer)
 {
 	return m_activeRowDescriptor->bind(
+		columnNumber,
+		targetType,
+		bufferLength,
+		targetPointer,
+		indicatorPointer);
+}
+
+bool Statement::bindParameter(uint16_t columnNumber, int16_t targetType, SQLLEN bufferLength, void * targetPointer, SQLLEN * indicatorPointer)
+{
+	return m_activeParameterDescriptor->bind(
 		columnNumber,
 		targetType,
 		bufferLength,
@@ -158,23 +234,115 @@ SQLRETURN Statement::getColumns(std::string catalogName, std::string schemaName,
 }
 
 
-bool Statement::execute()
+SQLRETURN Statement::execute()
 {
 	m_cursorPos = 0;
+	abortBinaryTransfer();
 
 	Json::Value parameters;
 	parameters["query"] = m_query;
 
-	// TODO: Pass all bound parameters
-	parameters["parameters"] = Json::Value(Json::arrayValue); 
-
-	if (!m_connection->executePostCommand(m_apiResult, "execute", parameters))
+	
+	if (m_handle.size() != 0)
 	{
-		return false;
+		Json::Value parametersFreeHandle;
+		parametersFreeHandle["Handle"] = m_handle;
+		m_connection->executePostCommand(m_apiResult, "FreeHandle", parametersFreeHandle);
+		m_handle.clear();
 	}
 
-	return m_currentResult.fromJson(m_apiResult);
+	if (!m_connection->executePostCommand(m_apiResult, "PrepareStatement", parameters))
+		return SQL_ERROR;
+	
+	m_handle = m_apiResult["Handle"].asString();
+	if (m_handle.size() == 0) return SQL_ERROR;
+
+	// Process parameters - we can go ahead if there are no pending data-at-execution parameters
+	return processParametersAndExecute();
 }
+
+
+
+SQLRETURN Statement::paramData(SQLPOINTER* paramInfo)
+{
+	if (m_currentParameter == 0) return SQL_ERROR; // nothing to upload
+	
+	if (!m_isFirstParamUpload)
+	{
+		// Finish up the previous upload and store its metadata in m_jsonParameters
+		// Note: If we were just passed a NULL value in the SQLPutData call, we might
+		// not actually have uploaded something (m_isUploadPending == false).
+		if (m_isUploadPending)
+		{
+			if (!m_connection->finishUpload())
+			{
+				resetParameterUploadState();
+				return SQL_ERROR;
+			}
+		}
+		m_jsonParameters.append(m_currentParameter);
+		
+		// Advance to the next data-on-execute parameter - or execute if this was the last one.
+		SQLRETURN result = processParametersAndExecute();
+		if (result != SQL_NEED_DATA)
+		{
+			return result;
+		}
+	}
+
+	m_isFirstParamUpload = false;
+
+	// Return the paramInfo of the current parameter to the application
+	// so that it knows which parameter to upload
+	if (paramInfo == NULL) 
+		return SQL_ERROR;
+	*paramInfo = m_currentParameterDescriptor.getTargetPointer();
+	return SQL_NEED_DATA;
+}
+
+#define PUTDATA_ASSERT(condition) if(!(condition)) { resetParameterUploadState(); return false; }
+bool Statement::putData(SQLPOINTER data, SQLLEN lengthOrIndicator)
+{
+	// these options are not supported (yet)
+	if (lengthOrIndicator == SQL_NTS || lengthOrIndicator == SQL_DEFAULT_PARAM) return false;
+
+	if (!m_isUploadPending)
+	{
+		// don't upload anything if the data is null
+		// we will tell the CDN about the null parameter by passing the null
+		// in the metadata instead of the upload handle.
+		if (lengthOrIndicator == SQL_NULL_DATA)
+		{
+			m_currentJsonParameter["value"] = Json::Value(Json::nullValue);
+			return true;
+		}
+
+		Json::Value jsonParams;
+		jsonParams["Query"] = m_query;
+		PUTDATA_ASSERT(m_connection->executePostCommand(m_apiResult, "PrepareStatement", jsonParams));
+
+		try
+		{
+			m_uploadHandle.clear();
+			m_uploadHandle = m_apiResult["Handle"].asString();
+			m_currentJsonParameter["value"] = Json::Value(m_uploadHandle);
+		}
+		catch (Json::Exception)
+		{
+			PUTDATA_ASSERT(false);
+		}
+
+		PUTDATA_ASSERT(m_connection->beginUpload(m_uploadHandle));
+		m_isUploadPending = true;
+	}
+
+	
+	PUTDATA_ASSERT(lengthOrIndicator >= 0); // reject all special values once we are already in upload mode
+	PUTDATA_ASSERT(m_connection->uploadChunk(data, lengthOrIndicator));
+	return true;
+}
+#undef PUTDATA_ASSERT
+
 
 bool Statement::fetchNext()
 {

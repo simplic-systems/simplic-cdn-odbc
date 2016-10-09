@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "util.h"
 #include "odbc_api.h"
+#include <sqlext.h>
 
 #include "Helper.h"
 #include "Statement.h"
@@ -51,9 +52,25 @@ SQLAPI SQLBindParameter(
         SQLLEN          BufferLength,
         SQLLEN *        StrLen_or_IndPtr)
 {
-	SQLAPI_DEBUG
+	SQLAPI_DEBUG;
     //FIXME: IMPLEMENT
-    return SQL_ERROR;
+
+	if (InputOutputType != SQL_PARAM_INPUT)
+		return SQL_ERROR;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	// TODO: handle conversion based on ValueType and ParameterType
+	bool result = stmt->bindParameter(
+		ParameterNumber,
+		ParameterType,
+		BufferLength,
+		(void*)ParameterValuePtr,
+		StrLen_or_IndPtr
+	);
+
+	return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -74,8 +91,11 @@ SQLAPI SQLParamData(
         SQLPOINTER *   ValuePtrPtr)
 {
 	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	SQLRETURN result = stmt->paramData(ValuePtrPtr);
+	return result;
 }
 
 
@@ -87,8 +107,11 @@ SQLAPI  SQLPutData(
         SQLLEN       StrLen_or_Ind)
 {
 	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL) return SQL_ERROR;
+
+	bool result = stmt->putData(DataPtr, StrLen_or_Ind);
+	return result ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -388,8 +411,8 @@ SQLAPI SQLExecute(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	bool result = stmt->execute();
-	return result ? SQL_SUCCESS : SQL_ERROR;
+	SQLRETURN result = stmt->execute();
+	return result;
 }
 
 
@@ -409,8 +432,8 @@ SQLAPI SQLExecDirect(
 	std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
 	stmt->setQuery(query);
 
-	bool result = stmt->execute();
-	return result ? SQL_SUCCESS : SQL_ERROR;
+	SQLRETURN result = stmt->execute();
+	return result;
 }
 
 

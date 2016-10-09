@@ -27,6 +27,7 @@ public:
 	ApplicationDataDescriptor();
 	
 	inline bool isExplicitlyAllocated() { return m_isExplicitlyAllocated; }
+	bool getItem(size_t nItem, ApplicationDataDescriptorItem& result);
 
 	/** Binds a column/parameter buffer as in SQLBindCol */
 	bool bind(
@@ -57,10 +58,15 @@ public:
 		SQLLEN bufferLength,
 		void* targetPointer,
 		SQLLEN* indicatorPointer);
+	ApplicationDataDescriptorItem(const ApplicationDataDescriptorItem& other);
 
 	/** Converts the specified json value to the type specified by this descriptor item
 	 *  and writes the converted value into the bound buffer. */
 	SQLRETURN toBoundBuffer(const Json::Value* jsonValue, const ColumnDescriptor* metaData);
 
-	inline bool isBufferBound() { return m_targetPointer != NULL; }
+	inline bool isBufferBound() const { return m_targetPointer != NULL; }
+	inline int16_t getTargetType() const { return m_targetType; }
+	inline SQLLEN getBufferLength() const { return m_bufferLength; }
+	inline void* getTargetPointer() const { return m_targetPointer; }
+	inline SQLLEN* getIndicatorPointer() const { return m_indicatorPointer; }
 };
