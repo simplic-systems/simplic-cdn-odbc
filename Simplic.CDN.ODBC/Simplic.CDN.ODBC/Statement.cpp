@@ -133,8 +133,9 @@ SQLRETURN Statement::processParametersAndExecute()
 	// no more parameters => we can execute the query.
 	m_currentParameter = 0;
 	Json::Value parameters;
-	parameters["Parameters"] = Json::Value(Json::arrayValue);
-	parameters["Handle"] = m_query; // TODO: DUMMY, USE m_handle INSTEAD OF m_query HERE
+
+	parameters["Parameters"] = m_jsonParameters;
+	parameters["Handle"] = m_handle;
 
 	if (!m_connection->executePostCommand(m_apiResult, "Execute", parameters))
 		return SQL_ERROR;
@@ -280,7 +281,7 @@ SQLRETURN Statement::paramData(SQLPOINTER* paramInfo)
 				return SQL_ERROR;
 			}
 		}
-		m_jsonParameters.append(m_currentParameter);
+		m_jsonParameters.append(m_currentJsonParameter);
 		
 		// Advance to the next data-on-execute parameter - or execute if this was the last one.
 		SQLRETURN result = processParametersAndExecute();
@@ -318,8 +319,8 @@ bool Statement::putData(SQLPOINTER data, SQLLEN lengthOrIndicator)
 		}
 
 		Json::Value jsonParams;
-		jsonParams["Query"] = m_query;
-		PUTDATA_ASSERT(m_connection->executePostCommand(m_apiResult, "PrepareStatement", jsonParams));
+		//jsonParams["Query"] = m_query;
+		PUTDATA_ASSERT(m_connection->executeGetCommand(m_apiResult, "RequestHandle", jsonParams));
 
 		try
 		{
