@@ -115,10 +115,13 @@ bool QueryResult::fromJson(const Json::Value& apiResponse)
 
 	// parse column meta info
 	const Json::Value& columns = meta["Columns"]; 
-	if (columns.isNull()) return false;
-	for (auto it = columns.begin(); it != columns.end(); ++it)
+	
+	if (!columns.isNull())
 	{
-		m_columnMeta.push_back(ColumnDescriptor(*it));
+		for (auto it = columns.begin(); it != columns.end(); ++it)
+		{
+			m_columnMeta.push_back(ColumnDescriptor(*it));
+		}
 	}
 
 	return true;

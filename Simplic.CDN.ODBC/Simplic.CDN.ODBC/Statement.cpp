@@ -271,7 +271,7 @@ bool Statement::getTables(std::string catalogName, std::string schemaName, std::
 
 	bool success = m_currentResult.fromJson(m_apiResult);
 	if (!success) m_diagInfo.setRecord(new DiagRecord("Unable to parse response from 'GetTables' API call."));
-	return success ? SQL_SUCCESS : SQL_ERROR;
+	return success;
 }
 
 
