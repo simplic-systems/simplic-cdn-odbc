@@ -6,6 +6,7 @@
 #include "Environment.h"
 #include "DbConnection.h"
 #include "Statement.h"
+#include "OdbcApiObject.h"
 
 SQLAPI SQLAllocHandle(
    SQLSMALLINT   HandleType,
@@ -86,18 +87,17 @@ SQLAPI SQLGetDiagField(
         SQLSMALLINT *   StringLengthPtr)
 {
 	SQLAPI_DEBUG;
-	//FIXME: IMPLEMENT
-	if (DiagIdentifier == SQL_DIAG_SQLSTATE)
-	{
-		Helper::stringToOdbc("01000", (char*)DiagInfoPtr, BufferLength, (uint16_t*)StringLengthPtr);
-	}
-	else if (BufferLength <= 4)
-	{
-		*(uint16_t*)DiagInfoPtr = 0;
-		if (StringLengthPtr != NULL) *StringLengthPtr = 0;
-	}
-	else Helper::stringToOdbc("Simplic.CDN.ODBC driver: Diagnostics not implemented yet", (char*)DiagInfoPtr, BufferLength, (uint16_t*)StringLengthPtr);
-    return SQL_NO_DATA;
+
+	OdbcApiObject* apiObj = (OdbcApiObject*)Handle;
+	if (apiObj == NULL) return SQL_ERROR;
+
+	return apiObj->diagInfo()->toOdbc(
+		RecNumber,
+		DiagIdentifier,
+		DiagInfoPtr,
+		BufferLength,
+		StringLengthPtr
+	);
 }
 
 
@@ -115,10 +115,45 @@ SQLAPI SQLGetDiagRec(
         SQLSMALLINT *   TextLengthPtr)
 {
 	SQLAPI_DEBUG;
-    //FIXME: IMPLEMENT
-	if(SQLState != NULL) strcpy_s((char*) SQLState, 6, "01000"); // general warning
-	if (NativeErrorPtr != NULL) *NativeErrorPtr = 0;
-	Helper::stringToOdbc("Simplic.CDN.ODBC driver: Diagnostics not implemented yet", (char*)MessageText, BufferLength, (uint16_t*)TextLengthPtr);
+
+	OdbcApiObject* apiObj = (OdbcApiObject*)Handle;
+	if (apiObj == NULL) return SQL_ERROR;
+
+	SQLRETURN result = SQL_SUCCESS;
+	if (SQLState != NULL)
+	{
+		 result = apiObj->diagInfo()->toOdbc(
+			RecNumber,
+			SQL_DIAG_SQLSTATE,
+			SQLState,
+			6, // buffer length for sql state
+			NULL
+		);
+		if (result != SQL_SUCCESS) return result;
+	}
 	
-    return SQL_NO_DATA;
+	if (NativeErrorPtr != NULL)
+	{
+		result = apiObj->diagInfo()->toOdbc(
+			RecNumber,
+			SQL_DIAG_NATIVE,
+			NativeErrorPtr,
+			sizeof(SQLINTEGER), // buffer length for native error code
+			NULL
+		);
+		if (result != SQL_SUCCESS) return result;
+	}
+
+	if (MessageText != NULL || TextLengthPtr != NULL)
+	{
+		result = apiObj->diagInfo()->toOdbc(
+			RecNumber,
+			SQL_DIAG_MESSAGE_TEXT,
+			MessageText,
+			BufferLength,
+			TextLengthPtr
+		);
+	}
+
+	return result;
 }

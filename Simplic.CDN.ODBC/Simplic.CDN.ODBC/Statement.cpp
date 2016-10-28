@@ -49,7 +49,11 @@ SQLRETURN Statement::downloadBinaryChunk(
 	{
 		const Json::Value & value = (*m_currentResult.rows()[0])[nColumn - 1];
 		bool ok = m_connection->beginDownload(value.asString());
-		if (!ok) return SQL_ERROR;
+		if (!ok)
+		{
+			m_diagInfo.setRecord(new DiagRecord("Failed to initiate binary download."));
+			return SQL_ERROR;
+		}
 
 		m_isDownloadPending = true;
 		m_downloadColumn = nColumn;
@@ -62,6 +66,7 @@ SQLRETURN Statement::downloadBinaryChunk(
 	if (bytesRead < 0)
 	{
 		abortBinaryTransfer();
+		m_diagInfo.setRecord(new DiagRecord("An error occurred while downloading binary data."));
 		return SQL_ERROR;
 	}
 
@@ -90,6 +95,39 @@ void Statement::resetParameterUploadState()
 	m_currentJsonParameter.clear();
 }
 
+void Statement::diagFailedCommand(const std::string& command)
+{
+	// got any error information from Simplic.CDN? then parse it and store it as an
+	// error that originated from the data source (=the CDN)
+	if (!m_apiResult.isNull())
+	{
+		try
+		{
+			Json::Value message = m_apiResult.get("Message", Json::Value());
+			Json::Value exceptionMessage = m_apiResult.get("ExceptionMessage", Json::Value());
+			std::string errorMessage;
+			if (message.isString()) errorMessage += message.asString();
+			if (message.isString() && exceptionMessage.isString()) errorMessage += ": ";
+			if (exceptionMessage.isString()) errorMessage += exceptionMessage.asString();
+
+			if (errorMessage.size() > 0)
+			{
+				m_diagInfo.setRecord(new DiagRecord(
+					DiagRecord::ORIGIN_DATASOURCE,
+					errorMessage
+				));
+				return;
+			}
+		}
+		catch (Json::Exception) {}
+	}
+	
+	m_diagInfo.setRecord(new DiagRecord(
+		DiagRecord::ORIGIN_DRIVER,
+		std::string("An error occurred while invoking the '") + command + 
+		"' API command."));
+}
+
 SQLRETURN Statement::processParametersAndExecute()
 {
 	if (m_currentParameter == 0)
@@ -104,6 +142,7 @@ SQLRETURN Statement::processParametersAndExecute()
 		SQLLEN* indicator = m_currentParameterDescriptor.getIndicatorPointer();
 		if (indicator == NULL)
 		{
+			m_diagInfo.setRecord(new DiagRecord("Failed to process query parameter: Indicator value is missing!"));
 			resetParameterUploadState();
 			return SQL_ERROR;
 		}
@@ -121,7 +160,7 @@ SQLRETURN Statement::processParametersAndExecute()
 
 		// parameter with bound buffer: 
 		// read the data from that buffer and store it as a parameter.
-
+		m_diagInfo.setRecord(new DiagRecord("Failed to process query parameter: Query parameters with bound buffers are not supported."));
 		return SQL_ERROR;
 		// TODO: Add the parameter like this (need to implement OdbcTypeConverter::odbcParamToJson):
 		//m_currentJsonParameter["value"] = OdbcTypeConverter::getInstance()->odbcParamToJson(m_currentParameterDescriptor);
@@ -138,10 +177,14 @@ SQLRETURN Statement::processParametersAndExecute()
 	parameters["Handle"] = m_handle;
 
 	if (!m_connection->executePostCommand(m_apiResult, "Execute", parameters))
+	{
+		diagFailedCommand("Execute");
 		return SQL_ERROR;
+	}
 
 
 	bool success = m_currentResult.fromJson(m_apiResult);
+	if(!success) m_diagInfo.setRecord(new DiagRecord("Unable to parse response from 'Execute' API call."));
 	return success ? SQL_SUCCESS : SQL_ERROR;
 }
 
@@ -162,29 +205,39 @@ void Statement::setQuery(const std::string& query)
 
 bool Statement::bindColumn(uint16_t columnNumber, int16_t targetType, SQLLEN bufferLength, void * targetPointer, SQLLEN * indicatorPointer)
 {
-	return m_activeRowDescriptor->bind(
+	bool result = m_activeRowDescriptor->bind(
 		columnNumber,
 		targetType,
 		bufferLength,
 		targetPointer,
 		indicatorPointer);
+
+	m_diagInfo.setRecord(new DiagRecord("Failed to bind column."));
+	return result;
 }
 
 bool Statement::bindParameter(uint16_t columnNumber, int16_t targetType, SQLLEN bufferLength, void * targetPointer, SQLLEN * indicatorPointer)
 {
-	return m_activeParameterDescriptor->bind(
+	bool result = m_activeParameterDescriptor->bind(
 		columnNumber,
 		targetType,
 		bufferLength,
 		targetPointer,
 		indicatorPointer);
+
+	m_diagInfo.setRecord(new DiagRecord("Failed to bind parameter."));
+	return result;
 }
 
 
 SQLRETURN Statement::getData(SQLUSMALLINT Col_or_Param_Num, SQLSMALLINT TargetType, SQLPOINTER TargetValuePtr, SQLLEN BufferLength, SQLLEN *StrLen_or_IndPtr)
 {
 	const Json::Value & row = *m_currentResult.rows()[0];
-	if (Col_or_Param_Num > row.size()) return SQL_ERROR;
+	if (Col_or_Param_Num > row.size())
+	{
+		m_diagInfo.setRecord(new DiagRecord("Failed to get data: Column/Parameter number out of bounds."));
+		return SQL_ERROR;
+	}
 
 	const Json::Value & value = row[Col_or_Param_Num-1]; // subtract 1 to account for the missing "bookmark column"
 	ColumnDescriptor* meta = m_currentResult.column(Col_or_Param_Num);
@@ -192,7 +245,10 @@ SQLRETURN Statement::getData(SQLUSMALLINT Col_or_Param_Num, SQLSMALLINT TargetTy
 	if (Helper::isBinaryType(meta->getType()) && Helper::isBinaryType(TargetType))
 		return downloadBinaryChunk(Col_or_Param_Num, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
 
-	return OdbcTypeConverter::getInstance()->jsonToOdbc(&value, meta, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
+	SQLRETURN result = OdbcTypeConverter::getInstance()->jsonToOdbc(&value, meta, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
+	if(result == SQL_ERROR) 
+		m_diagInfo.setRecord(new DiagRecord("Failed to get data: Could not convert result data to the requested type."));
+	return result;
 
 }
 
@@ -209,10 +265,13 @@ bool Statement::getTables(std::string catalogName, std::string schemaName, std::
 
 	if(!m_connection->executeGetCommand(m_apiResult, "gettables", parameters))
 	{
+		diagFailedCommand("gettables");
 		return false;
 	}
 
-	return m_currentResult.fromJson(m_apiResult);
+	bool success = m_currentResult.fromJson(m_apiResult);
+	if (!success) m_diagInfo.setRecord(new DiagRecord("Unable to parse response from 'GetTables' API call."));
+	return success ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -228,10 +287,13 @@ SQLRETURN Statement::getColumns(std::string catalogName, std::string schemaName,
 
 	if (!m_connection->executeGetCommand(m_apiResult, "getcolumns", parameters))
 	{
-		return false;
+		diagFailedCommand("getcolumns");
+		return SQL_ERROR;
 	}
 
-	return m_currentResult.fromJson(m_apiResult);
+	bool success = m_currentResult.fromJson(m_apiResult);
+	if (!success) m_diagInfo.setRecord(new DiagRecord("Unable to parse response from 'GetColumns' API call."));
+	return success ? SQL_SUCCESS : SQL_ERROR;
 }
 
 
@@ -243,7 +305,7 @@ SQLRETURN Statement::execute()
 	Json::Value parameters;
 	parameters["query"] = m_query;
 
-	
+
 	if (m_handle.size() != 0)
 	{
 		Json::Value parametersFreeHandle;
@@ -253,8 +315,11 @@ SQLRETURN Statement::execute()
 	}
 
 	if (!m_connection->executePostCommand(m_apiResult, "PrepareStatement", parameters))
+	{
+		diagFailedCommand("PrepareStatement");
 		return SQL_ERROR;
-	
+	}
+
 	m_handle = m_apiResult["Handle"].asString();
 	if (m_handle.size() == 0) return SQL_ERROR;
 
@@ -266,8 +331,12 @@ SQLRETURN Statement::execute()
 
 SQLRETURN Statement::paramData(SQLPOINTER* paramInfo)
 {
-	if (m_currentParameter == 0) return SQL_ERROR; // nothing to upload
-	
+	if (m_currentParameter == 0)
+	{
+		m_diagInfo.setRecord(new DiagRecord("Can't retrieve parameter data: There is no parameter available for upload."));
+		return SQL_ERROR; // nothing to upload
+	}
+
 	if (!m_isFirstParamUpload)
 	{
 		// Finish up the previous upload and store its metadata in m_jsonParameters
@@ -278,11 +347,12 @@ SQLRETURN Statement::paramData(SQLPOINTER* paramInfo)
 			if (!m_connection->finishUpload())
 			{
 				resetParameterUploadState();
+				m_diagInfo.setRecord(new DiagRecord("Failed to complete pending parameter upload."));
 				return SQL_ERROR;
 			}
 		}
 		m_jsonParameters.append(m_currentJsonParameter);
-		
+
 		// Advance to the next data-on-execute parameter - or execute if this was the last one.
 		SQLRETURN result = processParametersAndExecute();
 		if (result != SQL_NEED_DATA)
@@ -295,17 +365,32 @@ SQLRETURN Statement::paramData(SQLPOINTER* paramInfo)
 
 	// Return the paramInfo of the current parameter to the application
 	// so that it knows which parameter to upload
-	if (paramInfo == NULL) 
+	if (paramInfo == NULL)
+	{
+		m_diagInfo.setRecord(new DiagRecord("Can't retrieve parameter data: Result pointer is NULL"));
 		return SQL_ERROR;
+	}
 	*paramInfo = m_currentParameterDescriptor.getTargetPointer();
 	return SQL_NEED_DATA;
 }
 
-#define PUTDATA_ASSERT(condition) if(!(condition)) { resetParameterUploadState(); return false; }
+#define PUTDATA_ASSERT(condition, message) \
+	if(!(condition)) { resetParameterUploadState(); m_diagInfo.setRecord(new DiagRecord(message)); return false; }
 bool Statement::putData(SQLPOINTER data, SQLLEN lengthOrIndicator)
 {
-	// these options are not supported (yet)
-	if (lengthOrIndicator == SQL_NTS || lengthOrIndicator == SQL_DEFAULT_PARAM) return false;
+	// this option is not supported (yet)
+	if (lengthOrIndicator == SQL_NTS)
+	{
+		m_diagInfo.setRecord(new DiagRecord("Failed to put data: SQL_NTS option (null-terminated string) is not supported"));
+		return false;
+	}
+
+	// this option is not supported (yet)
+	if (lengthOrIndicator == SQL_DEFAULT_PARAM)
+	{
+		m_diagInfo.setRecord(new DiagRecord("Failed to put data: SQL_DEFAULT_PARAM option (default length) is not supported"));
+		return false;
+	}
 
 	if (!m_isUploadPending)
 	{
@@ -319,8 +404,12 @@ bool Statement::putData(SQLPOINTER data, SQLLEN lengthOrIndicator)
 		}
 
 		Json::Value jsonParams;
-		//jsonParams["Query"] = m_query;
-		PUTDATA_ASSERT(m_connection->executeGetCommand(m_apiResult, "RequestHandle", jsonParams));
+		if (!m_connection->executeGetCommand(m_apiResult, "RequestHandle", jsonParams))
+		{
+			resetParameterUploadState();
+			diagFailedCommand("RequestHandle");
+			return false;
+		}
 
 		try
 		{
@@ -330,16 +419,18 @@ bool Statement::putData(SQLPOINTER data, SQLLEN lengthOrIndicator)
 		}
 		catch (Json::Exception)
 		{
-			PUTDATA_ASSERT(false);
+			PUTDATA_ASSERT(false, "Failed to put data: Could not parse handle from 'RequestHandle' API result");
 		}
 
-		PUTDATA_ASSERT(m_connection->beginUpload(m_uploadHandle));
+		PUTDATA_ASSERT(m_connection->beginUpload(m_uploadHandle), "Failed to put data: Could not initiate upload");
 		m_isUploadPending = true;
 	}
 
-	
-	PUTDATA_ASSERT(lengthOrIndicator >= 0); // reject all special values once we are already in upload mode
-	PUTDATA_ASSERT(m_connection->uploadChunk(data, lengthOrIndicator));
+	// reject all special values once we are already in upload mode
+	PUTDATA_ASSERT(lengthOrIndicator >= 0, "Failed to put data: Got unsupported length/indicator value during upload"); 
+
+	PUTDATA_ASSERT(m_connection->uploadChunk(data, lengthOrIndicator),
+		"Failed to put data: An error occurred while uploading a chunk of data.");
 	return true;
 }
 #undef PUTDATA_ASSERT
@@ -359,7 +450,11 @@ bool Statement::fetch(uint32_t fromRow, uint32_t numRows)
 
 	m_currentResult.rows().clear();
 	Json::Value& rows = m_apiResult["Rows"];
-	if (rows.isNull()) return false;
+	if (rows.isNull())
+	{
+		m_diagInfo.setRecord(new DiagRecord("Failed to fetch rows: No row data available"));
+		return false;
+	}
 
 	uint32_t rowsAvailable = rows.size() - fromRow;
 

@@ -5,12 +5,13 @@
 #include "ApplicationDataDescriptor.h"
 #include "json/json.h"
 #include "odbc_api.h"
+#include "OdbcApiObject.h"
 
 #include <set>
 #include <mutex>
 #include <string>
 
-class Statement
+class Statement : public OdbcApiObject
 {
 private:
 	std::recursive_mutex m_mutex;
@@ -64,6 +65,8 @@ private:
 
 	void abortBinaryTransfer();
 	void resetParameterUploadState();
+
+	void diagFailedCommand(const std::string& command);
 
 
 public:

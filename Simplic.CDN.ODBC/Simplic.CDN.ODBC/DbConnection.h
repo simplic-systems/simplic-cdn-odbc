@@ -2,6 +2,7 @@
 
 #include "json/json.h"
 #include "Environment.h"
+#include "OdbcApiObject.h"
 
 #include <stdint.h>
 #include <set>
@@ -15,7 +16,7 @@ static size_t ReceiveData(void *contents, size_t size, size_t nmemb, void *userp
 static size_t SendData(void *contents, size_t size, size_t nmemb, void *userp);
 class Statement;
 
-class DbConnection
+class DbConnection : public OdbcApiObject
 {
 private:
 	std::recursive_mutex m_mutex;

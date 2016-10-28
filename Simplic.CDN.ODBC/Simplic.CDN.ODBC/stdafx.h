@@ -14,5 +14,5 @@
 // macro to create a scoped lock, used in classes accessible from the ODBC API.
 #define LOCK(mutex) std::lock_guard<std::recursive_mutex> lock(mutex)
 
-
+#define VENDOR_IDENTIFIER "EDV-Systeme Spiegelburg"
 

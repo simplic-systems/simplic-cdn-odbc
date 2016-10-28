@@ -36,10 +36,10 @@ bool FixedSizeInfoField<T>::fromOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength
 template<typename T>
 bool FixedSizeInfoField<T>::toOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength, SQLSMALLINT * dataLengthPtr)
 {
-	if (buffer == NULL) return false;
 	// we can ignore BufferLength here and assume that the buffer is large enough
 	// (this is allowed for integer values)
 	if(dataLengthPtr != NULL) *dataLengthPtr = sizeof(T);
+	if (buffer == NULL) return true; // buffer == NULL => ODBC app doesn't want the value
 	*(T*)buffer = getValue();
 	return true;
 }

@@ -75,6 +75,12 @@
     <ClInclude Include="OdbcTypeConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DiagInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OdbcApiObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -135,6 +141,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OdbcTypeConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DiagInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OdbcApiObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

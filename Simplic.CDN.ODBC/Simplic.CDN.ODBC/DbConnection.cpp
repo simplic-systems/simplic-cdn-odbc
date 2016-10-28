@@ -315,11 +315,6 @@ bool DbConnection::executeCommand(Json::Value& apiResult, const std::string & co
 		curlPrepareGet(m_curl, std::string("odbc/") + command, parameters);
 	CURLcode curlresult = curlPerformRequest(m_curl);
 	long httpresult = curlGetHttpStatusCode(m_curl);
-	if (curlresult != CURLE_OK || httpresult < 200 || httpresult > 299)
-	{
-		apiResult = Json::Value(); // clear result object if parsing failed
-		return false;
-	}
 
 	Json::Reader reader;
 	if (!reader.parse(m_recvbufJson.str(), apiResult, false)) // parse responseString into response, skipping comments
@@ -328,7 +323,10 @@ bool DbConnection::executeCommand(Json::Value& apiResult, const std::string & co
 		return false;
 	}
 
-	return true;
+	if (curlresult != CURLE_OK || httpresult < 200 || httpresult > 299)
+		return false;
+	else 
+		return true;
 }
 
 bool DbConnection::executeGetCommand(Json::Value& apiResult, const std::string & command, const Json::Value & parameters)
