@@ -39,7 +39,7 @@
     <ROW Component="AI_ExePath" ComponentId="{C58BD759-870E-48D9-87C6-7099710A755D}" Directory_="APPDIR" Attributes="260" KeyPath="AI_ExePath"/>
     <ROW Component="APPDIR" ComponentId="{2B4D841C-EDF7-47CF-AE2D-E7385CE93113}" Directory_="APPDIR" Attributes="256"/>
     <ROW Component="B5158184F44A6981C5919229A6AEBE" ComponentId="{628C81C4-FDDB-48F7-9D08-14A90E74DEFE}" Directory_="APPDIR" Attributes="260" KeyPath="B5158184F44A6981C5919229A6AEBE" Options="2"/>
-    <ROW Component="D7E473DF14F3E98497864847195F2" ComponentId="{9AC48E7E-6CEA-474D-8524-1F4E5B469265}" Directory_="APPDIR" Attributes="260" KeyPath="D7E473DF14F3E98497864847195F2" Options="2"/>
+    <ROW Component="D7E473DF14F3E98497864847195F2" ComponentId="{9AC48E7E-6CEA-474D-8524-1F4E5B469265}" Directory_="APPDIR" Attributes="4" KeyPath="D7E473DF14F3E98497864847195F2" Options="2"/>
     <ROW Component="ProductInformation" ComponentId="{D9F9A2FE-6DE1-43E2-81DD-C2523703E520}" Directory_="APPDIR" Attributes="260" KeyPath="Version"/>
     <ROW Component="Simplic.CDN.ODBC.dll" ComponentId="{BF13F184-3977-435E-9439-810886E141B4}" Directory_="bin64_Dir" Attributes="256" KeyPath="Simplic.CDN.ODBC.dll"/>
     <ROW Component="libcurl_debug.dll" ComponentId="{75504207-1D74-4235-A2EB-9B11BF2F1104}" Directory_="bin64_Dir" Attributes="256" KeyPath="libcurl_debug.dll"/>
@@ -56,7 +56,7 @@
     <ROW File="libcurl_debug.dll" Component_="libcurl_debug.dll" FileName="LIBCUR~1.DLL|libcurl_debug.dll" Attributes="0" SourcePath="..\build\bin64\libcurl_debug.dll" SelfReg="false" NextFile="Simplic.CDN.ODBC.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
-    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="0" PackageFolder="..\..\..\..\..\Support\Simplic Cdn Odbc Build\x64" Languages="en" InstallationType="4" CabsLocation="1" PackageType="1" FilesInsideExe="true" ExtractionFolder="[AppDataFolder][|Manufacturer]\[|ProductName] [|ProductVersion]\install" UseLargeSchema="true" MsiPackageType="x64"/>
+    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="0" PackageFolder="..\..\..\..\..\Support\Simplic Cdn Odbc Build\x64" Languages="en" InstallationType="4" CabsLocation="1" PackageType="1" FilesInsideExe="true" ExtractionFolder="[AppDataFolder][|Manufacturer]\[|ProductName] [|ProductVersion]\install" ExtUI="true" UseLargeSchema="true" MsiPackageType="x64"/>
     <ATTRIBUTE name="CurrentBuild" value="DefaultBuild"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
@@ -71,6 +71,7 @@
     <ROW Fragment="FolderDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\FolderDlg.aip"/>
     <ROW Fragment="MaintenanceTypeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\MaintenanceTypeDlg.aip"/>
     <ROW Fragment="MaintenanceWelcomeDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\MaintenanceWelcomeDlg.aip"/>
+    <ROW Fragment="PrerequisitesDlg.aip" Path="&lt;AI_THEMES&gt;classic\fragments\PrerequisitesDlg.aip"/>
     <ROW Fragment="SequenceDialogs.aip" Path="&lt;AI_THEMES&gt;classic\fragments\SequenceDialogs.aip"/>
     <ROW Fragment="Sequences.aip" Path="&lt;AI_FRAGS&gt;Sequences.aip"/>
     <ROW Fragment="StaticUIStrings.aip" Path="&lt;AI_FRAGS&gt;StaticUIStrings.aip"/>
@@ -114,7 +115,7 @@
     <ROW Name="xmlCfg.dll" SourcePath="&lt;AI_CUSTACTS&gt;xmlCfg.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiControlEventComponent">
-    <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="WelcomeDlg" Control_="Next" Event="NewDialog" Argument="PrerequisitesDlg" Condition="AI_INSTALL" Ordering="1"/>
     <ROW Dialog_="FolderDlg" Control_="Next" Event="NewDialog" Argument="VerifyReadyDlg" Condition="AI_INSTALL" Ordering="201"/>
     <ROW Dialog_="FolderDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="AI_INSTALL" Ordering="1"/>
     <ROW Dialog_="MaintenanceWelcomeDlg" Control_="Next" Event="NewDialog" Argument="MaintenanceTypeDlg" Condition="AI_MAINT" Ordering="99"/>
@@ -139,6 +140,8 @@
     <ROW Dialog_="ExitDialog" Control_="Finish" Event="DoAction" Argument="AI_CleanPrereq" Condition="1" Ordering="301"/>
     <ROW Dialog_="FatalError" Control_="Finish" Event="DoAction" Argument="AI_CleanPrereq" Condition="1" Ordering="102"/>
     <ROW Dialog_="UserExit" Control_="Finish" Event="DoAction" Argument="AI_CleanPrereq" Condition="1" Ordering="101"/>
+    <ROW Dialog_="PrerequisitesDlg" Control_="Next" Event="NewDialog" Argument="FolderDlg" Condition="AI_INSTALL" Ordering="1"/>
+    <ROW Dialog_="PrerequisitesDlg" Control_="Back" Event="NewDialog" Argument="WelcomeDlg" Condition="AI_INSTALL" Ordering="1"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCreateFolderComponent">
     <ROW Directory_="APPDIR" Component_="APPDIR" ManualDelete="false"/>
@@ -240,7 +243,7 @@
     <ROW Condition="VersionNT" Description="[ProductName] cannot be installed on [WindowsType9XDisplay]." DescriptionLocId="AI.LaunchCondition.No9X" IsPredefined="true" Builds="DefaultBuild"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiOdbcDriverComponent">
-    <ROW Driver="Simplic.CDN.ODBC.dll" Description="Simplic CDN ODBC x64" File_="Simplic.CDN.ODBC.dll" File_Setup="Simplic.CDN.ODBC.dll"/>
+    <ROW Driver="Simplic.CDN.ODBC.dll" Description="Simplic.CDN.ODBC ANSI" File_="Simplic.CDN.ODBC.dll" File_Setup="Simplic.CDN.ODBC.dll"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiRegLocatorComponent">
     <ROW Signature_="AI_EXE_PATH_CU" Root="1" Key="Software\Caphyon\Advanced Installer\LZMA\[ProductCode]\[ProductVersion]" Name="AI_ExePath" Type="2"/>
@@ -261,12 +264,12 @@
     <ROW UpgradeCode="[|UpgradeCode]" VersionMin="[|ProductVersion]" Attributes="2" ActionProperty="AI_NEWERPRODUCTFOUND"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.PreReqComponent">
-    <ROW PrereqKey="B5158184F44A6981C5919229A6AEBE" DisplayName="Visual C++ Redistributable for Visual Studio 2015 x64" VersionMin="14.0" SetupFileUrl="Prerequisites\Visual C++ Redistributable for Visual Studio 2015\vc_redist.x64.exe" Location="0" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows XP x64, Windows XP x64 Service Pack 1, Windows Server 2003 x64, Windows Server 2003 x64 Service Pack 1, Windows Vista x64, Windows Vista x64 Service Pack 1, Windows 7 x64, Windows Server 2008 R2 x64" Operator="1" NoUiComLine="/q /norestart" Options="x" TargetName="Visual C++ Redistributable for Visual Studio 2015\vc_redist.x64.exe" Type="1" Feature="B5158184F44A6981C5919229A6AEBE"/>
+    <ROW PrereqKey="B5158184F44A6981C5919229A6AEBE" DisplayName="Visual C++ Redistributable for Visual Studio 2015 x64" VersionMin="14.0" SetupFileUrl="Prerequisites\Visual C++ Redistributable for Visual Studio 2015\vc_redist.x64.exe" Location="0" ExactSize="0" WinNTVersions="Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" WinNT64Versions="Windows XP x64, Windows XP x64 Service Pack 1, Windows Server 2003 x64, Windows Server 2003 x64 Service Pack 1, Windows Vista x64, Windows Vista x64 Service Pack 1, Windows 7 x64, Windows Server 2008 R2 x64" Operator="1" Options="x" TargetName="Visual C++ Redistributable for Visual Studio 2015\vc_redist.x64.exe" Type="1" Feature="B5158184F44A6981C5919229A6AEBE"/>
     <ROW PrereqKey="D7E473DF14F3E98497864847195F2" DisplayName="Visual C++ Redistributable for Visual Studio 2015 x86" VersionMin="14.0" SetupFileUrl="Prerequisites\Visual C++ Redistributable for Visual Studio 2015\vc_redist.x86.exe" Location="0" ExactSize="0" WinNTVersions="Windows XP x86, Windows XP x86 Service Pack 1, Windows XP x86 Service Pack 2, Windows Server 2003 x86, Windows Server 2003 x86 Service Pack 1, Windows Vista x86, Windows Vista x86 Service Pack 1, Windows 7 x86" WinNT64Versions="Windows XP x64, Windows XP x64 Service Pack 1, Windows Server 2003 x64, Windows Server 2003 x64 Service Pack 1, Windows Vista x64, Windows Vista x64 Service Pack 1, Windows 7 x64, Windows Server 2008 R2 x64" Operator="1" NoUiComLine="/q /norestart" TargetName="Visual C++ Redistributable for Visual Studio 2015\vc_redist.x86.exe" Type="1" Feature="D7E473DF14F3E98497864847195F2"/>
     <ATTRIBUTE name="PrereqsOrder" value="B5158184F44A6981C5919229A6AEBE D7E473DF14F3E98497864847195F2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.PreReqSearchComponent">
-    <ROW SearchKey="B5158184F44A6981C5919229A6AEBEVersion" Prereq="B5158184F44A6981C5919229A6AEBE" SearchType="2" SearchString="HKLM\SOFTWARE\Microsoft\DevDiv\VC\Servicing\14.0\RuntimeMinimum\Version" VerMin="14.0.23026" Order="1" Property="PreReqSearch_B5158184F44A6981C5919229A6AEBE"/>
+    <ROW SearchKey="B5158184F44A6981C5919229A6AEBEVersion" Prereq="B5158184F44A6981C5919229A6AEBE" SearchType="2" SearchString="HKLM\SOFTWARE\Microsoft\DevDiv\VC\Servicing\14.0\RuntimeMinimum\Version" VerMin="14.0.23026" Order="1" Property="PreReqSearch_B5158184F44A6981C5919229A6AEBE" Platform="1"/>
     <ROW SearchKey="D7E473DF14F3E98497864847195F2Version" Prereq="D7E473DF14F3E98497864847195F2" SearchType="2" SearchString="HKLM\SOFTWARE\Microsoft\DevDiv\VC\Servicing\14.0\RuntimeMinimum\Version" VerMin="14.0.23026" Order="1" Property="PreReqSearch_D7E473DF14F3E98497864847195F2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.SoftwareIdentificationComponent">
