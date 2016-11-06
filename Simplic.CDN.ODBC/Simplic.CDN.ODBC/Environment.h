@@ -1,11 +1,12 @@
 #pragma once
 
+#include "OdbcApiObject.h"
 #include <set>
 #include <mutex>
 
 class DbConnection;
 
-class Environment
+class Environment : public OdbcApiObject
 {
 private:
 	std::recursive_mutex m_mutex;

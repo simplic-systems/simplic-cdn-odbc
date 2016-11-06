@@ -6,6 +6,7 @@
 #include "QueryResult.h"
 #include "json\json-forwards.h"
 #include "odbc_api.h"
+#include "OdbcApiObject.h"
 
 class ApplicationDataDescriptorItem;
 
@@ -14,7 +15,7 @@ class ApplicationDataDescriptorItem;
  * This includes information on buffers bound by the application to result columns or parameters.
  * It corresponds to the "ARD" and "APD" described in the ODBC doocumentation: https://msdn.microsoft.com/en-us/library/ms716339(v=vs.85).aspx
  */
-class ApplicationDataDescriptor
+class ApplicationDataDescriptor : public OdbcApiObject
 {
 private:
 	// general information

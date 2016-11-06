@@ -171,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="ApplicationDataDescriptor.h" />
     <ClInclude Include="DbConnection.h" />
+    <ClInclude Include="DiagInfo.h" />
     <ClInclude Include="DSN.h" />
     <ClInclude Include="Environment.h" />
     <ClInclude Include="global_info.h" />
@@ -178,6 +179,7 @@
     <ClInclude Include="Info.h" />
     <ClInclude Include="json\json-forwards.h" />
     <ClInclude Include="json\json.h" />
+    <ClInclude Include="OdbcApiObject.h" />
     <ClInclude Include="OdbcTypeConverter.h" />
     <ClInclude Include="odbc_api.h" />
     <ClInclude Include="QueryResult.h" />
@@ -191,6 +193,7 @@
   <ItemGroup>
     <ClCompile Include="ApplicationDataDescriptor.cpp" />
     <ClCompile Include="DbConnection.cpp" />
+    <ClCompile Include="DiagInfo.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -217,6 +220,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="OdbcApiObject.cpp" />
     <ClCompile Include="OdbcTypeConverter.cpp" />
     <ClCompile Include="odbc_api.cpp" />
     <ClCompile Include="odbc_api_connection.cpp" />

@@ -16,7 +16,9 @@ bool StringInfoField::fromOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength)
 bool StringInfoField::toOdbc(SQLPOINTER buffer, SQLSMALLINT bufferLength, SQLSMALLINT * dataLengthPtr)
 {
 	std::string value = getValue();
-	*dataLengthPtr = (SQLSMALLINT)value.size();
+	if(dataLengthPtr != NULL) *dataLengthPtr = (SQLSMALLINT)value.size();
+	if (buffer == NULL) return true; // buffer == NULL => ODBC app doesn't want the value
+
 	SQLSMALLINT bytesToCopy = min(SQLSMALLINT(value.size()) + 1, bufferLength);
 	memcpy(buffer, value.c_str(), bytesToCopy);
 	return bytesToCopy <= bufferLength;
