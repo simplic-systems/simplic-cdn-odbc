@@ -35,8 +35,8 @@ void GlobalInfo::initializeInfo()
 	m_info.addField(SQL_SCROLL_CONCURRENCY, new FixedSizeInfoField<SQLUINTEGER>(0));
 	m_info.addField(SQL_TXN_ISOLATION_OPTION, new FixedSizeInfoField<SQLUINTEGER>(0));
 
-	m_info.addField(SQL_DBMS_VER, new StringInfoField("00.00.0000"));
-	m_info.addField(SQL_DBMS_NAME, new StringInfoField("Simplic.CDN.ODBC"));
+	m_info.addField(SQL_DBMS_VER, new StringInfoField("00.01.1300"));
+	m_info.addField(SQL_DBMS_NAME, new StringInfoField("Simplic.CDN"));
 }
 
 void GlobalInfo::createSingletonInstance(HINSTANCE hInstance)
