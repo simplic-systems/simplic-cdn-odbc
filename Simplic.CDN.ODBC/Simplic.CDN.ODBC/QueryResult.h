@@ -49,6 +49,9 @@ private:
 	// total amount of rows available to fetch. This is NOT equal to m_rows.size()
 	uint32_t m_rowCount;
 
+	// number of affected rows for UPDATE/INSERT/DELETE statements
+	int64_t m_affectedRowCount;
+
 	// currently fetched rows
 	std::vector<Json::Value*> m_rows;
 
@@ -57,5 +60,5 @@ public:
 	ColumnDescriptor* column(uint32_t i);
 	bool fromJson(const Json::Value& apiResponse);
 
-
+	inline int64_t getAffectedRowCount() { return m_affectedRowCount; }
 };

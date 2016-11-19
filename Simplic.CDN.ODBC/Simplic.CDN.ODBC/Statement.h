@@ -79,6 +79,9 @@ public:
 	// Get number of rows in the currently fetched part of the result set.
 	uint32_t getNumFetchedRows();
 
+	// Get number of rows affected by an UPDATE/INSERT/DELETE statement
+	int64_t getNumAffectedRows();
+
 	// Set the query string (for prepared statements or directly executed queries)
 	void setQuery(const std::string& query);
 

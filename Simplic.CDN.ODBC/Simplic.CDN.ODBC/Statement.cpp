@@ -195,8 +195,14 @@ ColumnDescriptor* Statement::getColumnDescriptor(uint32_t i)
 
 uint32_t Statement::getNumFetchedRows()
 {
-	return (uint32_t) m_currentResult.rows().size();
+	return (uint32_t)m_currentResult.rows().size();
 }
+
+int64_t Statement::getNumAffectedRows()
+{
+	return m_currentResult.getAffectedRowCount();
+}
+
 
 void Statement::setQuery(const std::string& query)
 {

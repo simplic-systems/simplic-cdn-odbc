@@ -295,9 +295,14 @@ SQLAPI SQLRowCount(
         SQLHSTMT   StatementHandle,
         SQLLEN *   RowCountPtr)
 {
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
+	SQLAPI_DEBUG;
+
+	Statement* stmt = (Statement*)StatementHandle;
+	if (stmt == NULL || RowCountPtr == NULL) return SQL_ERROR;
+
+	*RowCountPtr = stmt->getNumAffectedRows();
+
+	return SQL_SUCCESS;
 }
 
 
