@@ -8,6 +8,9 @@
 #include "Statement.h"
 #include "OdbcApiObject.h"
 
+#include <string>
+
+
 SQLAPI SQLAllocHandle(
    SQLSMALLINT   HandleType,
    SQLHANDLE     InputHandle,
@@ -91,13 +94,18 @@ SQLAPI SQLGetDiagField(
 	OdbcApiObject* apiObj = (OdbcApiObject*)Handle;
 	if (apiObj == NULL) return SQL_ERROR;
 
-	return apiObj->diagInfo()->toOdbc(
-		RecNumber,
-		DiagIdentifier,
-		DiagInfoPtr,
-		BufferLength,
-		StringLengthPtr
-	);
+	try
+	{
+
+		return apiObj->diagInfo()->toOdbc(
+			RecNumber,
+			DiagIdentifier,
+			DiagInfoPtr,
+			BufferLength,
+			StringLengthPtr
+		);
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, apiObj); return SQL_ERROR; }
 }
 
 
@@ -119,41 +127,46 @@ SQLAPI SQLGetDiagRec(
 	OdbcApiObject* apiObj = (OdbcApiObject*)Handle;
 	if (apiObj == NULL) return SQL_ERROR;
 
-	SQLRETURN result = SQL_SUCCESS;
-	if (SQLState != NULL)
+	try
 	{
-		 result = apiObj->diagInfo()->toOdbc(
-			RecNumber,
-			SQL_DIAG_SQLSTATE,
-			SQLState,
-			6, // buffer length for sql state
-			NULL
-		);
-		if (result != SQL_SUCCESS) return result;
-	}
-	
-	if (NativeErrorPtr != NULL)
-	{
-		result = apiObj->diagInfo()->toOdbc(
-			RecNumber,
-			SQL_DIAG_NATIVE,
-			NativeErrorPtr,
-			sizeof(SQLINTEGER), // buffer length for native error code
-			NULL
-		);
-		if (result != SQL_SUCCESS) return result;
-	}
 
-	if (MessageText != NULL || TextLengthPtr != NULL)
-	{
-		result = apiObj->diagInfo()->toOdbc(
-			RecNumber,
-			SQL_DIAG_MESSAGE_TEXT,
-			MessageText,
-			BufferLength,
-			TextLengthPtr
-		);
-	}
+		SQLRETURN result = SQL_SUCCESS;
+		if (SQLState != NULL)
+		{
+			result = apiObj->diagInfo()->toOdbc(
+				RecNumber,
+				SQL_DIAG_SQLSTATE,
+				SQLState,
+				6, // buffer length for sql state
+				NULL
+			);
+			if (result != SQL_SUCCESS) return result;
+		}
 
-	return result;
+		if (NativeErrorPtr != NULL)
+		{
+			result = apiObj->diagInfo()->toOdbc(
+				RecNumber,
+				SQL_DIAG_NATIVE,
+				NativeErrorPtr,
+				sizeof(SQLINTEGER), // buffer length for native error code
+				NULL
+			);
+			if (result != SQL_SUCCESS) return result;
+		}
+
+		if (MessageText != NULL || TextLengthPtr != NULL)
+		{
+			result = apiObj->diagInfo()->toOdbc(
+				RecNumber,
+				SQL_DIAG_MESSAGE_TEXT,
+				MessageText,
+				BufferLength,
+				TextLengthPtr
+			);
+		}
+
+		return result;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, apiObj); return SQL_ERROR; }
 }

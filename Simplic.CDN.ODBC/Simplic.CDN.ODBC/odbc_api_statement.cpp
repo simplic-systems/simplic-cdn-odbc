@@ -24,15 +24,18 @@ SQLAPI SQLBindCol(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	bool result = stmt->bindColumn(
-		ColumnNumber,
-		TargetType,
-		BufferLength,
-		(void*)TargetValuePtr,
-		StrLen_or_Ind
-	);
-
-	return result ? SQL_SUCCESS : SQL_ERROR;
+	try
+	{
+		bool result = stmt->bindColumn(
+			ColumnNumber,
+			TargetType,
+			BufferLength,
+			(void*)TargetValuePtr,
+			StrLen_or_Ind
+		);
+		return result ? SQL_SUCCESS : SQL_ERROR;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -60,17 +63,19 @@ SQLAPI SQLBindParameter(
 
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
-
-	// TODO: handle conversion based on ValueType and ParameterType
-	bool result = stmt->bindParameter(
-		ParameterNumber,
-		ParameterType,
-		BufferLength,
-		(void*)ParameterValuePtr,
-		StrLen_or_IndPtr
-	);
-
-	return result ? SQL_SUCCESS : SQL_ERROR;
+	try
+	{
+		// TODO: handle conversion based on ValueType and ParameterType
+		bool result = stmt->bindParameter(
+			ParameterNumber,
+			ParameterType,
+			BufferLength,
+			(void*)ParameterValuePtr,
+			StrLen_or_IndPtr
+		);
+		return result ? SQL_SUCCESS : SQL_ERROR;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -94,8 +99,12 @@ SQLAPI SQLParamData(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	SQLRETURN result = stmt->paramData(ValuePtrPtr);
-	return result;
+	try
+	{
+		SQLRETURN result = stmt->paramData(ValuePtrPtr);
+		return result;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -110,8 +119,12 @@ SQLAPI  SQLPutData(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	bool result = stmt->putData(DataPtr, StrLen_or_Ind);
-	return result ? SQL_SUCCESS : SQL_ERROR;
+	try
+	{
+		bool result = stmt->putData(DataPtr, StrLen_or_Ind);
+		return result ? SQL_SUCCESS : SQL_ERROR;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -180,17 +193,21 @@ SQLAPI SQLColAttribute (
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	ColumnDescriptor* col = stmt->getColumnDescriptor(ColumnNumber);
-	if (col == NULL) return SQL_ERROR;
+	try
+	{
+		ColumnDescriptor* col = stmt->getColumnDescriptor(ColumnNumber);
+		if (col == NULL) return SQL_ERROR;
 
-	bool result = col->odbcGetField(
-		FieldIdentifier,
-		CharacterAttributePtr,
-		BufferLength,
-		StringLengthPtr,
-		NumericAttributePtr);
+		bool result = col->odbcGetField(
+			FieldIdentifier,
+			CharacterAttributePtr,
+			BufferLength,
+			StringLengthPtr,
+			NumericAttributePtr);
 
-	return result ? SQL_SUCCESS : SQL_ERROR;
+		return result ? SQL_SUCCESS : SQL_ERROR;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -213,29 +230,33 @@ SQLAPI SQLDescribeCol(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	ColumnDescriptor* col = stmt->getColumnDescriptor(ColumnNumber);
-	if (col == NULL) return SQL_ERROR;
-
-	std::string name = col->getName();
-	if (ColumnName != NULL)
+	try
 	{
-		memcpy(ColumnName, name.c_str(), min(name.size() + 1, BufferLength - 1));
+		ColumnDescriptor* col = stmt->getColumnDescriptor(ColumnNumber);
+		if (col == NULL) return SQL_ERROR;
 
-		// add terminating zero char if we didn't manage to copy it from the name.
-		if (BufferLength <= name.size()) ColumnName[BufferLength - 1] = '\0';
-	}
+		std::string name = col->getName();
+		if (ColumnName != NULL)
+		{
+			memcpy(ColumnName, name.c_str(), min(name.size() + 1, BufferLength - 1));
 
-	if (NameLengthPtr != NULL) *NameLengthPtr = SQLUSMALLINT(min(name.size(), 0xFFFF));
-	if (DataTypePtr != NULL) *DataTypePtr = col->getType();
+			// add terminating zero char if we didn't manage to copy it from the name.
+			if (BufferLength <= name.size()) ColumnName[BufferLength - 1] = '\0';
+		}
+
+		if (NameLengthPtr != NULL) *NameLengthPtr = SQLUSMALLINT(min(name.size(), 0xFFFF));
+		if (DataTypePtr != NULL) *DataTypePtr = col->getType();
 
 
-	// set properties we didn't implement yet to "unknown"
-	if (ColumnSizePtr != NULL) *ColumnSizePtr = col->getSize();
-	if (DecimalDigitsPtr != NULL) *DecimalDigitsPtr = 0;
-	if (NullablePtr != NULL) *NullablePtr = SQL_NULLABLE_UNKNOWN;
+		// set properties we didn't implement yet to "unknown"
+		if (ColumnSizePtr != NULL) *ColumnSizePtr = col->getSize();
+		if (DecimalDigitsPtr != NULL) *DecimalDigitsPtr = 0;
+		if (NullablePtr != NULL) *NullablePtr = SQL_NULLABLE_UNKNOWN;
 
 		
-    return SQL_SUCCESS;
+		return SQL_SUCCESS;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -250,28 +271,6 @@ SQLAPI SQLSpecialColumns(SQLHSTMT StatementHandle,
     //FIXME: IMPLEMENT
     return SQL_ERROR;
 }
-
-
-
-/*
-SQLAPI SQLSpecialColumns(
-        SQLHSTMT      StatementHandle,
-        SQLSMALLINT   IdentifierType,
-        SQLCHAR *     CatalogName,
-        SQLSMALLINT   NameLength1,
-        SQLCHAR *     SchemaName,
-        SQLSMALLINT   NameLength2,
-        SQLCHAR *     TableName,
-        SQLSMALLINT   NameLength3,
-        SQLSMALLINT   Scope,
-        SQLSMALLINT   Nullable)
-{
-	SQLAPI_DEBUG
-    //FIXME: IMPLEMENT
-    return SQL_ERROR;
-}
-
-*/
 
 
 
@@ -300,7 +299,11 @@ SQLAPI SQLRowCount(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL || RowCountPtr == NULL) return SQL_ERROR;
 
-	*RowCountPtr = stmt->getNumAffectedRows();
+	try
+	{
+		*RowCountPtr = stmt->getNumAffectedRows();
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 
 	return SQL_SUCCESS;
 }
@@ -325,16 +328,21 @@ SQLAPI SQLColumns(
         SQLSMALLINT    NameLength4)
 {
 	SQLAPI_DEBUG;
-	std::string catalogName = Helper::stringFromOdbc((char*)pCatalogName, NameLength1);
-	std::string schemaName = Helper::stringFromOdbc((char*)pSchemaName, NameLength2);
-	std::string tableName = Helper::stringFromOdbc((char*)pTableName, NameLength3);
-	std::string columnName = Helper::stringFromOdbc((char*)pColumnName, NameLength4);
 
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	SQLRETURN result = stmt->getColumns(catalogName, schemaName, tableName, columnName);
-	return result;
+	try
+	{
+		std::string catalogName = Helper::stringFromOdbc((char*)pCatalogName, NameLength1);
+		std::string schemaName = Helper::stringFromOdbc((char*)pSchemaName, NameLength2);
+		std::string tableName = Helper::stringFromOdbc((char*)pTableName, NameLength3);
+		std::string columnName = Helper::stringFromOdbc((char*)pColumnName, NameLength4);
+
+		SQLRETURN result = stmt->getColumns(catalogName, schemaName, tableName, columnName);
+		return result;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -386,17 +394,21 @@ SQLAPI SQLTables(
         SQLSMALLINT    NameLength4)
 {
 	SQLAPI_DEBUG;
-	
-	std::string catalogName = Helper::stringFromOdbc((char*)pCatalogName, NameLength1);
-	std::string schemaName  = Helper::stringFromOdbc((char*)pSchemaName, NameLength2);
-	std::string tableName   = Helper::stringFromOdbc((char*)pTableName, NameLength3);
-	std::string tableType   = Helper::stringFromOdbc((char*)pTableType, NameLength4);
 
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	bool result = stmt->getTables(catalogName, schemaName, tableName, tableType);
-    return result ? SQL_SUCCESS : SQL_ERROR;
+	try
+	{
+		std::string catalogName = Helper::stringFromOdbc((char*)pCatalogName, NameLength1);
+		std::string schemaName = Helper::stringFromOdbc((char*)pSchemaName, NameLength2);
+		std::string tableName = Helper::stringFromOdbc((char*)pTableName, NameLength3);
+		std::string tableType = Helper::stringFromOdbc((char*)pTableType, NameLength4);
+
+		bool result = stmt->getTables(catalogName, schemaName, tableName, tableType);
+		return result ? SQL_SUCCESS : SQL_ERROR;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -416,8 +428,12 @@ SQLAPI SQLExecute(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	SQLRETURN result = stmt->execute();
-	return result;
+	try
+	{
+		SQLRETURN result = stmt->execute();
+		return result;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -434,11 +450,15 @@ SQLAPI SQLExecDirect(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
-	stmt->setQuery(query);
+	try
+	{
+		std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
+		stmt->setQuery(query);
 
-	SQLRETURN result = stmt->execute();
-	return result;
+		SQLRETURN result = stmt->execute();
+		return result;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -451,14 +471,18 @@ SQLAPI SQLPrepare(
         SQLINTEGER    TextLength)
 {
 	SQLAPI_DEBUG;
-
+	
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
+	
+	try
+	{
+		std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
+		stmt->setQuery(query);
 
-	std::string query = Helper::stringFromOdbc((char*)StatementText, TextLength);
-	stmt->setQuery(query);
-
-	return SQL_SUCCESS;
+		return SQL_SUCCESS;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -485,15 +509,19 @@ SQLAPI SQLCancel(
 SQLAPI SQLFetch(
         SQLHSTMT     StatementHandle)
 {
-	SQLAPI_DEBUG
+	SQLAPI_DEBUG;
 
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	bool result = stmt->fetchNext();
-	if (!result) return SQL_ERROR;
-	if (stmt->getNumFetchedRows() == 0) return SQL_NO_DATA;
-	return SQL_SUCCESS;
+	try
+	{
+		bool result = stmt->fetchNext();
+		if (!result) return SQL_ERROR;
+		if (stmt->getNumFetchedRows() == 0) return SQL_NO_DATA;
+		return SQL_SUCCESS;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 
@@ -526,10 +554,14 @@ SQLAPI SQLGetData(
 	Statement* stmt = (Statement*)StatementHandle;
 	if (stmt == NULL) return SQL_ERROR;
 
-	//TODO: Implement getting long data in parts: https://msdn.microsoft.com/de-de/library/ms712426(v=vs.85).aspx
-	//We can probably store information about the progress on a data item as a "pseudo" ARD / APD item.
-	SQLRETURN result = stmt->getData(Col_or_Param_Num, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
-	return result;
+	try
+	{
+		//TODO: Implement getting long data in parts: https://msdn.microsoft.com/de-de/library/ms712426(v=vs.85).aspx
+		//We can probably store information about the progress on a data item as a "pseudo" ARD / APD item.
+		SQLRETURN result = stmt->getData(Col_or_Param_Num, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
+		return result;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 }
 
 

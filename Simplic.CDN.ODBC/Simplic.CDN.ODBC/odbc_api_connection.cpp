@@ -37,36 +37,43 @@ SQLAPI SQLDriverConnect(
         SQLUSMALLINT    DriverCompletion)
 {
 	SQLAPI_DEBUG;
-	
-	// create DSN from connection string
-	DSN dsn;
-	std::string connstr;
-	if (StringLength1 >= 0)
-	{
-		connstr = std::string((char*)InConnectionString, StringLength1);
-	}
-	else
-	{
-		// StringLength1 negative => assume that InConnectionString is null-terminated
-		connstr = std::string((char*)InConnectionString);
-	}
 
-	if (!dsn.fromConnectionString(connstr)) return SQL_ERROR;
-
-	dsn.loadAttributesFromRegistry();
-	if (WindowHandle) dsn.showConfigDialog(WindowHandle);
-
-	// write connection string to buffer
-	if (OutConnectionString != NULL)
-	{
-		Util::stringToOdbcBuffer(dsn.toConnectionString(), OutConnectionString, BufferLength, StringLength2Ptr);
-	}
-
-	// connect to the url/user/pw from that DSN
 	DbConnection* dbc = (DbConnection*)ConnectionHandle;
-	bool connected = dbc->connect(dsn.getUrl(), dsn.getUser(), dsn.getPassword());
+	if (dbc == NULL) return SQL_ERROR;
 
-    return connected ? SQL_SUCCESS : SQL_ERROR;
+	try
+	{
+
+		// create DSN from connection string
+		DSN dsn;
+		std::string connstr;
+		if (StringLength1 >= 0)
+		{
+			connstr = std::string((char*)InConnectionString, StringLength1);
+		}
+		else
+		{
+			// StringLength1 negative => assume that InConnectionString is null-terminated
+			connstr = std::string((char*)InConnectionString);
+		}
+
+		if (!dsn.fromConnectionString(connstr)) return SQL_ERROR;
+
+		dsn.loadAttributesFromRegistry();
+		if (WindowHandle) dsn.showConfigDialog(WindowHandle);
+
+		// write connection string to buffer
+		if (OutConnectionString != NULL)
+		{
+			Util::stringToOdbcBuffer(dsn.toConnectionString(), OutConnectionString, BufferLength, StringLength2Ptr);
+		}
+
+		// connect to the url/user/pw from that DSN
+		bool connected = dbc->connect(dsn.getUrl(), dsn.getUser(), dsn.getPassword());
+
+		return connected ? SQL_SUCCESS : SQL_ERROR;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, dbc); return SQL_ERROR; }
 }
 
 
@@ -113,12 +120,18 @@ SQLAPI SQLSetConnectAttr(
 	SQLAPI_DEBUG;
 
 	DbConnection* dbc = (DbConnection*) ConnectionHandle;
-	switch (Attribute)
-	{
-	case SQL_LOGIN_TIMEOUT: dbc->setTimeout(uint32_t(ValuePtr)); return SQL_SUCCESS;
+	if (dbc == NULL) return SQL_ERROR;
 
-	default: return SQL_ERROR;
+	try
+	{
+		switch (Attribute)
+		{
+		case SQL_LOGIN_TIMEOUT: dbc->setTimeout(uint32_t(ValuePtr)); return SQL_SUCCESS;
+
+		default: return SQL_ERROR;
+		}
 	}
+	catch (const std::exception& ex) { odbcHandleException(ex, dbc); return SQL_ERROR; }
 }
 
 
@@ -134,14 +147,18 @@ SQLAPI SQLGetInfo(
         SQLSMALLINT *   StringLengthPtr)
 {
 	SQLAPI_DEBUG;
-	OdbcInfoField* infoField = GlobalInfo::getInstance()->getInfoField((DbConnection*)ConnectionHandle, InfoType);
-	if (infoField == NULL) return SQL_ERROR;
-	bool success = infoField->toOdbc(
-		InfoValuePtr,
-		BufferLength,
-		StringLengthPtr
-	);
-	return success ? SQL_SUCCESS : SQL_ERROR;
+	try
+	{
+		OdbcInfoField* infoField = GlobalInfo::getInstance()->getInfoField((DbConnection*)ConnectionHandle, InfoType);
+		if (infoField == NULL) return SQL_ERROR;
+		bool success = infoField->toOdbc(
+			InfoValuePtr,
+			BufferLength,
+			StringLengthPtr
+		);
+		return success ? SQL_SUCCESS : SQL_ERROR;
+	}
+	catch (const std::exception& ex) { odbcHandleException(ex, (DbConnection*)ConnectionHandle); return SQL_ERROR; }
 }
 
 
