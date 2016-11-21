@@ -124,12 +124,19 @@ SQLAPI SQLSetConnectAttr(
 
 	try
 	{
+// disable pointer truncation warning for ValuePtr.
+// Depending on "Attribute", ValuePtr may contain an integer value instead of a pointer.
+// See https://msdn.microsoft.com/en-us/library/ms713605(v=vs.85).aspx
+#pragma warning(push)
+#pragma warning(disable: 4311) // pointer truncation
+#pragma warning(disable: 4302) // truncation to smaller type
 		switch (Attribute)
 		{
 		case SQL_LOGIN_TIMEOUT: dbc->setTimeout(uint32_t(ValuePtr)); return SQL_SUCCESS;
 
 		default: return SQL_ERROR;
 		}
+#pragma warning(pop) // re-enable warnings
 	}
 	catch (const std::exception& ex) { odbcHandleException(ex, dbc); return SQL_ERROR; }
 }

@@ -28,7 +28,7 @@ public:
 	ApplicationDataDescriptor();
 	
 	inline bool isExplicitlyAllocated() { return m_isExplicitlyAllocated; }
-	bool getItem(size_t nItem, ApplicationDataDescriptorItem& result);
+	bool getItem(uint16_t nItem, ApplicationDataDescriptorItem& result);
 
 	/** Binds a column/parameter buffer as in SQLBindCol */
 	bool bind(
