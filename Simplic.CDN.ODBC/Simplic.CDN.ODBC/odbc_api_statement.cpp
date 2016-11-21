@@ -556,8 +556,6 @@ SQLAPI SQLGetData(
 
 	try
 	{
-		//TODO: Implement getting long data in parts: https://msdn.microsoft.com/de-de/library/ms712426(v=vs.85).aspx
-		//We can probably store information about the progress on a data item as a "pseudo" ARD / APD item.
 		SQLRETURN result = stmt->getData(Col_or_Param_Num, TargetType, TargetValuePtr, BufferLength, StrLen_or_IndPtr);
 		return result;
 	}

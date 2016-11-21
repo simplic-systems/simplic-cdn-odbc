@@ -87,7 +87,6 @@ ODBCSETUP ConfigDSN(
 			if (!SQLWriteDSNToIni(dsnNew.getName().c_str(), ODBC_DRIVER_NAME))
 			{
 				if (hwndParent) MessageBoxA(hwndParent, "DSN konnte nicht erstellt werden.", "Simplic.CDN.ODBC", MB_ICONERROR);
-				if (hwndParent) MessageBoxA(hwndParent, dsnNew.getName().c_str(), "Simplic.CDN.ODBC", MB_ICONERROR); // FIXME DEBUG
 				return FALSE;
 			}
 		}
@@ -125,7 +124,7 @@ ODBCSETUP ConfigTranslator(
      DWORD *  pvOption)
 {
 	SQLAPI_DEBUG
-	// FIXME DEBUG
+	// FIXME: IMPLEMENT
 	
     *pvOption = 0;
     return TRUE;
