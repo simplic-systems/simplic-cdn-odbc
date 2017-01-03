@@ -179,6 +179,16 @@ SQLAPI SQLSetCursorName(
  *    METADATA QUERY FUNCTIONS
  * ****************************** */
 
+#ifdef _WIN64
+SQLAPI SQLColAttribute(
+	SQLHSTMT        StatementHandle,
+	SQLUSMALLINT    ColumnNumber,
+	SQLUSMALLINT    FieldIdentifier,
+	SQLPOINTER      CharacterAttributePtr,
+	SQLSMALLINT     BufferLength,
+	SQLSMALLINT *   StringLengthPtr,
+	SQLLEN *        NumericAttributePtr)
+#else
 SQLAPI SQLColAttribute (
         SQLHSTMT        StatementHandle,
         SQLUSMALLINT    ColumnNumber,
@@ -186,7 +196,8 @@ SQLAPI SQLColAttribute (
         SQLPOINTER      CharacterAttributePtr,
         SQLSMALLINT     BufferLength,
         SQLSMALLINT *   StringLengthPtr,
-        SQLLEN *        NumericAttributePtr)
+        SQLPOINTER      NumericAttributePtr)
+#endif
 {
 	SQLAPI_DEBUG;
 
@@ -203,7 +214,7 @@ SQLAPI SQLColAttribute (
 			CharacterAttributePtr,
 			BufferLength,
 			StringLengthPtr,
-			NumericAttributePtr);
+			(SQLLEN*)NumericAttributePtr);
 
 		return result ? SQL_SUCCESS : SQL_ERROR;
 	}
