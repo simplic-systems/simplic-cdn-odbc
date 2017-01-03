@@ -46,7 +46,7 @@ private:
 	// supplied buffer. Excess data is written into m_transferBufOverflow and copied
 	// to the application's buffer in the next downloadChunk() call.
 	uint8_t* m_transferBuf;
-	uint64_t m_transferBufLength; // remaining size of m_transferBuf in bytes
+	size_t m_transferBufLength; // remaining size of m_transferBuf in bytes
 	std::vector<uint8_t> m_transferBufOverflow;
 	// offset from which to start reading data into the application buffer
 	size_t m_transferBufOverflowOffset; 
@@ -101,11 +101,11 @@ public:
 // binary up/download
 	void resetTransfer();
 	bool beginDownload(const std::string & path, int64_t offset = 0, int64_t size = 0);
-	int64_t downloadChunk(void* result, uint64_t size, bool* completed = NULL);
+	int64_t downloadChunk(void* result, size_t size, bool* completed = NULL);
 
 	bool beginUpload(const std::string & handle);
 	bool finishUpload();
-	bool uploadChunk(void* data, int64_t size);
+	bool uploadChunk(void* data, size_t size);
 
 };
 

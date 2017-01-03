@@ -100,7 +100,7 @@ bool DSN::fromConnectionString(std::string connstr)
 	char buf[65536];
 	strcpy_s(buf, connstr.c_str());
 	// replace all ';' with null characters
-	for (int i = 0; i < connstr.size(); ++i)
+	for (size_t i = 0; i < connstr.size(); ++i)
 	{
 		if (buf[i] == ';')
 		{

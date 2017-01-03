@@ -75,7 +75,7 @@ SQLRETURN Statement::downloadBinaryChunk(
 
 	/* TODO: Return SQL_SUCCESS_WITH_INFO with SQLSTATE 01004 and diag message "Binary data, right truncated"
 	*       unless this was the last chunk of the download */
-	if(strLenIndicator) *strLenIndicator = isCompleted ? bytesRead : SQL_NO_TOTAL;
+	if(strLenIndicator) *strLenIndicator = isCompleted ? SQLINTEGER(bytesRead) : SQL_NO_TOTAL;
 	return SQL_SUCCESS;
 }
 
@@ -435,7 +435,7 @@ bool Statement::putData(SQLPOINTER data, SQLLEN lengthOrIndicator)
 	// reject all special values once we are already in upload mode
 	PUTDATA_ASSERT(lengthOrIndicator >= 0, "Failed to put data: Got unsupported length/indicator value during upload"); 
 
-	PUTDATA_ASSERT(m_connection->uploadChunk(data, lengthOrIndicator),
+	PUTDATA_ASSERT(m_connection->uploadChunk(data, (size_t)lengthOrIndicator),
 		"Failed to put data: An error occurred while uploading a chunk of data.");
 	return true;
 }

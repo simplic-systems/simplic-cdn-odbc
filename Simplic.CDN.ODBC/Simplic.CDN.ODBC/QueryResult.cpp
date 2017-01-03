@@ -50,7 +50,7 @@ void ColumnDescriptor::fromJson(const Json::Value & jsonColumn)
 
 	if (m_size == 0) // if "Size" was 0 or not set, use the default size
 	{
-		m_size = OdbcTypeConverter::getInstance()->getColumnSizeByType(m_type);
+		m_size = (size_t) OdbcTypeConverter::getInstance()->getColumnSizeByType(m_type);
 	}
 }
 

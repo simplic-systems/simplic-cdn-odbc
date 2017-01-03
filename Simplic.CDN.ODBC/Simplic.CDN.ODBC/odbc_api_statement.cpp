@@ -239,7 +239,7 @@ SQLAPI SQLDescribeCol(
 	SQLAPI_DEBUG;
 	
 	Statement* stmt = (Statement*)StatementHandle;
-	if (stmt == NULL) return SQL_ERROR;
+	if (stmt == NULL || BufferLength < 0) return SQL_ERROR;
 
 	try
 	{
@@ -249,10 +249,10 @@ SQLAPI SQLDescribeCol(
 		std::string name = col->getName();
 		if (ColumnName != NULL)
 		{
-			memcpy(ColumnName, name.c_str(), min(name.size() + 1, BufferLength - 1));
+			memcpy(ColumnName, name.c_str(), min(name.size() + 1, size_t(BufferLength) - 1));
 
 			// add terminating zero char if we didn't manage to copy it from the name.
-			if (BufferLength <= name.size()) ColumnName[BufferLength - 1] = '\0';
+			if (size_t(BufferLength) <= name.size()) ColumnName[BufferLength - 1] = '\0';
 		}
 
 		if (NameLengthPtr != NULL) *NameLengthPtr = SQLUSMALLINT(min(name.size(), 0xFFFF));
@@ -312,7 +312,16 @@ SQLAPI SQLRowCount(
 
 	try
 	{
-		*RowCountPtr = stmt->getNumAffectedRows();
+		int64_t nAffectedRows = stmt->getNumAffectedRows();
+
+#ifndef _WIN64
+		// clamp nAffectedRows to range [0..(2^31-1)] 
+		// just in case we update more than 2G rows from a 32bit driver
+		if (nAffectedRows < 0) nAffectedRows = 0;
+		if (nAffectedRows > 0x7FFFFFFF) nAffectedRows = 0x7FFFFFFF;
+#endif
+
+		*RowCountPtr = SQLINTEGER(nAffectedRows);
 	}
 	catch (const std::exception& ex) { odbcHandleException(ex, stmt); return SQL_ERROR; }
 

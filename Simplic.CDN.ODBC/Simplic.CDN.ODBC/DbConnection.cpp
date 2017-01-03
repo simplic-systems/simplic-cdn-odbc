@@ -372,7 +372,7 @@ bool DbConnection::beginDownload(const std::string & path, int64_t offset, int64
 }
 
 
-int64_t DbConnection::downloadChunk(void* result, uint64_t size, bool* completed)
+int64_t DbConnection::downloadChunk(void* result, size_t size, bool* completed)
 {
 	m_transferBufLength = size;
 	m_transferBuf = (uint8_t*) result;
@@ -380,7 +380,7 @@ int64_t DbConnection::downloadChunk(void* result, uint64_t size, bool* completed
 
 	// copy overflow data that didn't fit into the buffer the last time this function was called
 	m_transferBufOverflowOffset = min(m_transferBufOverflowOffset, m_transferBufOverflow.size());
-	int64_t overflowBytes = min(size, m_transferBufOverflow.size() - m_transferBufOverflowOffset);
+	size_t overflowBytes = min(size, m_transferBufOverflow.size() - m_transferBufOverflowOffset);
 
 	memcpy(m_transferBuf, m_transferBufOverflow.data() + m_transferBufOverflowOffset, overflowBytes);
 	
@@ -529,7 +529,7 @@ bool DbConnection::finishUpload()
 	return true;
 }
 
-bool DbConnection::uploadChunk(void * data, int64_t size)
+bool DbConnection::uploadChunk(void * data, size_t size)
 {
 	if (!m_isUploadPending) return false;
 	m_transferBuf = (uint8_t*) data;

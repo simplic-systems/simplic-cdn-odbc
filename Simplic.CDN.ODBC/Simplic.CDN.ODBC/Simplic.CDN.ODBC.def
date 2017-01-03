@@ -1,4 +1,3 @@
-LIBRARY   Simplic.CDN.ODBC.dll
 EXPORTS
         SQLAllocHandle
         SQLFreeHandle

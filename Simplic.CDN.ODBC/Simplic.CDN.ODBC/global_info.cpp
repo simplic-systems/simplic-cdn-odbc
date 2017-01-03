@@ -2,7 +2,11 @@
 #include "global_info.h"
 #include "sqlext.h"
 
-const char* ODBC_DRIVER_NAME = "Simplic.CDN.ODBC ANSI";
+#ifdef _WIN64
+const char* ODBC_DRIVER_NAME = "Simplic.CDN.ODBC ANSI x64";
+#else
+const char* ODBC_DRIVER_NAME = "Simplic.CDN.ODBC ANSI x86";
+#endif
 
 GlobalInfo* GlobalInfo::_singletonInstance = NULL;
 
@@ -18,7 +22,7 @@ GlobalInfo::~GlobalInfo()
 
 void GlobalInfo::initializeInfo()
 {
-	m_info.addField(SQL_DRIVER_NAME, new StringInfoField("Simplic.CDN.ODBC.dll"));
+	m_info.addField(SQL_DRIVER_NAME, new StringInfoField(TARGET_FILENAME));
 	m_info.addField(SQL_DRIVER_ODBC_VER, new StringInfoField("03.00"));
 
 	m_info.addField(SQL_CURSOR_COMMIT_BEHAVIOR, new FixedSizeInfoField<SQLUSMALLINT>(SQL_CB_CLOSE));
