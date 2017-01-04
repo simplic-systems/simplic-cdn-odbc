@@ -15,7 +15,7 @@
     <ROW Property="Manufacturer" Value="Simplic GmbH"/>
     <ROW Property="ProductCode" Value="1033:{8DDEE56D-5821-44E9-BD3F-CE2F7A0E0F46} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
-    <ROW Property="ProductName" Value="Simplic.Cdn.Odbc"/>
+    <ROW Property="ProductName" Value="Simplic.Cdn.Odbc x64"/>
     <ROW Property="ProductVersion" Value="0.1.3" Type="32"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND;AI_SETUPEXEPATH;SETUPEXEDIR"/>
     <ROW Property="UpgradeCode" Value="{223A73C1-2D0E-4C42-8AE6-43DAB62C1B0F}"/>
@@ -190,7 +190,7 @@
     <ROW Action="AI_XmlRemove" Type="11265" Source="xmlCfg.dll" Target="OnXmlRemove" WithoutSeq="true"/>
     <ROW Action="AI_XmlRollback" Type="11521" Source="xmlCfg.dll" Target="OnXmlRollback" WithoutSeq="true"/>
     <ROW Action="AI_XmlUninstall" Type="1" Source="xmlCfg.dll" Target="OnXmlUninstall" AdditionalSeq="AI_DATA_SETTER_1"/>
-    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="DefaultBuild:[ProgramFiles64Folder]Simplic\[ProductName]"/>
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="DefaultBuild:[ProgramFilesFolder]Simplic\[ProductName]"/>
     <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]"/>
     <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]"/>
   </COMPONENT>
@@ -269,7 +269,7 @@
     <ATTRIBUTE name="PrereqsOrder" value="B5158184F44A6981C5919229A6AEBE D7E473DF14F3E98497864847195F2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.PreReqSearchComponent">
-    <ROW SearchKey="B5158184F44A6981C5919229A6AEBEVersion" Prereq="B5158184F44A6981C5919229A6AEBE" SearchType="2" SearchString="HKLM\SOFTWARE\Microsoft\DevDiv\VC\Servicing\14.0\RuntimeMinimum\Version" VerMin="14.0.23026" Order="1" Property="PreReqSearch_B5158184F44A6981C5919229A6AEBE" Platform="1"/>
+    <ROW SearchKey="B5158184F44A6981C5919229A6AEBEVersion" Prereq="B5158184F44A6981C5919229A6AEBE" SearchType="2" SearchString="HKLM\SOFTWARE\Microsoft\DevDiv\VC\Servicing\14.0\RuntimeMinimum\Version" VerMin="14.0.23026" Order="1" Property="PreReqSearch_B5158184F44A6981C5919229A6AEBE"/>
     <ROW SearchKey="D7E473DF14F3E98497864847195F2Version" Prereq="D7E473DF14F3E98497864847195F2" SearchType="2" SearchString="HKLM\SOFTWARE\Microsoft\DevDiv\VC\Servicing\14.0\RuntimeMinimum\Version" VerMin="14.0.23026" Order="1" Property="PreReqSearch_D7E473DF14F3E98497864847195F2"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.SoftwareIdentificationComponent">
