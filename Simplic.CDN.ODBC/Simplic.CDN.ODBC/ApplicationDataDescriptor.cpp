@@ -7,7 +7,7 @@ ApplicationDataDescriptor::ApplicationDataDescriptor()
 { }
 
 
-bool ApplicationDataDescriptor::getItem(size_t nItem, ApplicationDataDescriptorItem& result)
+bool ApplicationDataDescriptor::getItem(uint16_t nItem, ApplicationDataDescriptorItem& result)
 {
 	auto it = m_items.find(nItem);
 	if (it == m_items.end()) return false;

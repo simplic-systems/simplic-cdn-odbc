@@ -50,7 +50,7 @@ void ColumnDescriptor::fromJson(const Json::Value & jsonColumn)
 
 	if (m_size == 0) // if "Size" was 0 or not set, use the default size
 	{
-		m_size = OdbcTypeConverter::getInstance()->getColumnSizeByType(m_type);
+		m_size = (size_t) OdbcTypeConverter::getInstance()->getColumnSizeByType(m_type);
 	}
 }
 
@@ -112,6 +112,12 @@ bool QueryResult::fromJson(const Json::Value& apiResponse)
 
 	// parse general meta info
 	m_rowCount = meta["RowCount"].asUInt();
+
+	const Json::Value& affectedRows = meta["AffectedRows"];
+	if (affectedRows.isNull())
+		m_affectedRowCount = -1;
+	else
+		m_affectedRowCount = affectedRows.asInt64();
 
 	// parse column meta info
 	const Json::Value& columns = meta["Columns"]; 
